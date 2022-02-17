@@ -16,7 +16,7 @@ app.use(async (context, next) => {
 // Serve static files from example/www and build folders
 app.use(async (context, next) => {
   try {
-    await context.send({ root: join(Deno.cwd(), "www") });
+    await context.send({ root: join(Deno.cwd(), "www"), index: "index.html" });
   } catch {
     try {
       await context.send({ root: join(Deno.cwd(), "../build") });
