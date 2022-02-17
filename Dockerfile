@@ -116,8 +116,15 @@ COPY --from=doubleconversion /emsdk/upstream/emscripten/cache/sysroot /emsdk/ups
 # End Dependencies
 
 COPY openscad . 
-RUN export PKG_CONFIG_PATH="/emsdk/upstream/emscripten/cache/sysroot/lib/pkgconfig"
-RUN emcmake cmake -B ../build . -DNULLGL=ON \
+RUN export PKG_CONFIG_PATH="/emsdk/upstream/emscripten/cache/sysroot/lib/pkgconfig" && \
+    emcmake cmake -B ../build . \
+    -DWASM=ON \
+    -DSNAPSHOT=ON \
+    -DEXPERIMENTAL=ON \
+    -DENABLE_CAIRO=OFF \
+    -DUSE_MIMALLOC=OFF \
+    -DBoost_USE_STATIC_RUNTIME=ON \
+    -DBoost_USE_STATIC_LIBS=ON \
     -DCMAKE_BUILD_TYPE=Release \
     -DHARFBUZZ_INCLUDE_DIRS=/emsdk/upstream/emscripten/cache/sysroot/include/harfbuzz \
     -DFONTCONFIG_INCLUDE_DIR=/emsdk/upstream/emscripten/cache/sysroot/include/fontconfig \
