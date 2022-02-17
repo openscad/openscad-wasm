@@ -124,8 +124,8 @@ RUN emcmake cmake -B ../build . -DNULLGL=ON \
     -DFONTCONFIG_LIBRARIES=libfontconfig.a
 
 # Hack to fix build includes
-RUN sed -e "s|-isystem /emsdk/upstream/emscripten/cache/sysroot/include||g" -i ../build/CMakeFiles/OpenSCAD.dir/includes_C.rsp
-RUN sed -e "s|-isystem /emsdk/upstream/emscripten/cache/sysroot/include||g" -i ../build/CMakeFiles/OpenSCAD.dir/includes_CXX.rsp
+RUN sed -e "s|-isystem /emsdk/upstream/emscripten/cache/sysroot/include[^/]||g" -i ../build/CMakeFiles/OpenSCAD.dir/includes_C.rsp
+RUN sed -e "s|-isystem /emsdk/upstream/emscripten/cache/sysroot/include[^/]||g" -i ../build/CMakeFiles/OpenSCAD.dir/includes_CXX.rsp
 RUN sed -e "s|-lfontconfig|/emsdk/upstream/emscripten/cache/sysroot/lib/libglib-2.0.a /emsdk/upstream/emscripten/cache/sysroot/lib/libzip.a /emsdk/upstream/emscripten/cache/sysroot/lib/libz.a /emsdk/upstream/emscripten/cache/sysroot/lib/libfontconfig.a|g" -i ../build/CMakeFiles/OpenSCAD.dir/linklibs.rsp
 
 # Add emscripten flags here
