@@ -39,45 +39,46 @@ libs: libs/cgal \
 	libs/zlib \
 	libs/libxml2
 
+SINGLE_BRANCH_MAIN=--branch main --single-branch
 SINGLE_BRANCH=--branch master --single-branch
-SHALLOW=--depth 1 ${SINGLE_BRANCH}
+SHALLOW=--depth 1
 
 libs/cgal:
-	git clone https://github.com/CGAL/cgal.git ${SHALLOW} $@
+	git clone https://github.com/CGAL/cgal.git ${SHALLOW} ${SINGLE_BRANCH} $@
 
 libs/eigen:
-	git clone https://github.com/PX4/eigen.git ${SHALLOW} $@
+	git clone https://github.com/PX4/eigen.git ${SHALLOW} ${SINGLE_BRANCH} $@
 
 libs/fontconfig:
-	git clone https://gitlab.freedesktop.org/fontconfig/fontconfig.git ${SHALLOW} $@
+	git clone https://gitlab.freedesktop.org/fontconfig/fontconfig.git ${SHALLOW} ${SINGLE_BRANCH_MAIN} $@
 
 libs/freetype:
-	git clone https://gitlab.freedesktop.org/freetype/freetype.git ${SHALLOW} $@
+	git clone https://gitlab.freedesktop.org/freetype/freetype.git ${SHALLOW} ${SINGLE_BRANCH} $@
 
 libs/glib:
-	git clone https://gist.github.com/acfa1c09522705efa5eb0541d2d00887.git ${SHALLOW} $@
+	git clone https://gist.github.com/acfa1c09522705efa5eb0541d2d00887.git ${SHALLOW} ${SINGLE_BRANCH} $@
 	git -C $@ apply ../../patches/glib.patch 
 
 libs/harfbuzz:
-	git clone https://github.com/harfbuzz/harfbuzz.git ${SHALLOW} $@
+	git clone https://github.com/harfbuzz/harfbuzz.git ${SHALLOW} ${SINGLE_BRANCH_MAIN} $@
 
 libs/lib3mf:
-	git clone https://github.com/3MFConsortium/lib3mf.git ${SHALLOW} $@
+	git clone https://github.com/3MFConsortium/lib3mf.git ${SHALLOW} ${SINGLE_BRANCH} $@
 
 libs/libexpat:
-	git clone  https://github.com/libexpat/libexpat ${SHALLOW} $@
+	git clone  https://github.com/libexpat/libexpat ${SHALLOW} ${SINGLE_BRANCH} $@
 
 libs/liblzma:
-	git clone https://github.com/kobolabs/liblzma.git ${SHALLOW} $@
+	git clone https://github.com/kobolabs/liblzma.git ${SHALLOW} ${SINGLE_BRANCH} $@
 
 libs/libzip:
-	git clone https://github.com/nih-at/libzip.git ${SHALLOW} $@
+	git clone https://github.com/nih-at/libzip.git ${SHALLOW} ${SINGLE_BRANCH} $@
 
 libs/zlib:
-	git clone https://github.com/madler/zlib.git ${SHALLOW} $@
+	git clone https://github.com/madler/zlib.git ${SHALLOW} ${SINGLE_BRANCH} $@
 
 libs/libxml2:
-	git clone https://gitlab.gnome.org/GNOME/libxml2.git ${SHALLOW} $@
+	git clone https://gitlab.gnome.org/GNOME/libxml2.git ${SHALLOW} ${SINGLE_BRANCH} $@
 
 libs/openscad:
 	git clone --recurse https://github.com/openscad/openscad.git ${SINGLE_BRANCH} $@
@@ -85,7 +86,7 @@ libs/openscad:
 	git -C $@ apply ../../patches/openscad-2019.patch
 
 libs/boost:
-	git clone --recurse https://github.com/boostorg/boost.git ${SHALLOW} $@
+	git clone --recurse https://github.com/boostorg/boost.git ${SHALLOW} ${SINGLE_BRANCH} $@
 	git -C $@/libs/filesystem apply ../../../../patches/boost-filesystem.patch
 
 libs/gmp-6.1.2:
