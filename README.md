@@ -46,9 +46,9 @@ deno test --allow-read --allow-write
 make test
 ```
 
-## Usage
+## API
 
-The project is a ES6 module. Simply import the module:
+The project is an ES6 module. Simply import the module:
 ```ts
 import OpenSCAD from "./openscad.js";
 
