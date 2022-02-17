@@ -101,7 +101,7 @@ RUN cd ../build && make && make install
 
 
 FROM emscripten/emsdk as openscad
-RUN apt-get update && apt-get install pkg-config flex bison -y
+RUN apt-get update && apt-get install pkg-config flex bison gettext python-is-python3 -y
 # Dependencies
 COPY --from=boost /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
 COPY --from=gmp /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
