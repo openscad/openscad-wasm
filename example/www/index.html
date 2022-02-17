@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+
+<body>
+    <script type="module">
+        import OpenScad from "./openscad.js";
+
+        function downloadFile(blob, fileName) {
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = fileName;
+            document.body.append(link);
+            link.click();
+            link.remove();
+        };
+
+        const instance = await OpenScad({ noInitialRun: true });
+
+        instance.FS.writeFile("/input.scad", `cube(10);`);
+        instance.callMain(["/input.scad", "-o", "cube.stl"]);
+        const output = instance.FS.readFile("/cube.stl");
+
+        downloadFile(new Blob([output], { type: "application/octet-stream" }), "cube.stl");
+    </script>
+</body>
+
+</html>

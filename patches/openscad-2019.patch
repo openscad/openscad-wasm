@@ -1,0 +1,250 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 7dd8e3faf..8377437d6 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -53,7 +53,7 @@ add_compile_options("$<$<CONFIG:DEBUG>:-DDEBUG>")
+ # NDEBUG is known to cause OpenSCAD to crash in some case, so make sure it is unset.  Issue #2180 for details.
+ add_compile_options("-UNDEBUG")
+ 
+-set(CMAKE_CXX_STANDARD 11)
++set(CMAKE_CXX_STANDARD 14)
+ if(APPLE)
+   # Needed for deployment target 10.8 as cmake doesn't know about the libc++
+   set(CMAKE_CXX_FLAGS "-stdlib=libc++")
+@@ -80,6 +80,8 @@ add_definitions(-DENABLE_CGAL)
+ # NOTE FindCGAL.cmake resets the BOOST_* and Boost_* variables,
+ #   because it looks for Boost itself, so it has to be called
+ #   before we look for our own required boost libraries.
++set(Boost_USE_STATIC_RUNTIME   ON)
++set(Boost_USE_STATIC_LIBS   ON)
+ set(BOOST_DIRECTLY_REQUIRED_LIBRARIES filesystem system thread regex program_options)
+ find_package(Boost 1.36 REQUIRED COMPONENTS ${BOOST_DIRECTLY_REQUIRED_LIBRARIES} QUIET)
+ message(STATUS "Boost: ${Boost_MAJOR_VERSION}.${Boost_MINOR_VERSION}.${Boost_SUBMINOR_VERSION}")
+@@ -88,9 +90,10 @@ include_directories(${Boost_INCLUDE_DIRS})
+ # Check if boost dependency libraries have been found too
+ list(LENGTH BOOST_DIRECTLY_REQUIRED_LIBRARIES BOOST_DIRECTLY_REQUIRED_LIBRARIES_LENGTH)
+ list(LENGTH Boost_LIBRARIES Boost_LIBRARIES_LENGTH)
+-if(Boost_LIBRARIES_LENGTH EQUAL BOOST_DIRECTLY_REQUIRED_LIBRARIES_LENGTH)
+-  message(FATAL_ERROR "No dependent Boost libraries found. Your CMake (${CMAKE_VERSION}) version might be too old for the version of boost you are using (${Boost_MAJOR_VERSION}.${Boost_MINOR_VERSION}.${Boost_SUBMINOR_VERSION}). In that case, you should have received warnings above of the type: 'Imported targets not available for Boost version ${Boost_VERSION}'")
+-endif()
++
++#if(Boost_LIBRARIES_LENGTH EQUAL BOOST_DIRECTLY_REQUIRED_LIBRARIES_LENGTH)
++#  message(FATAL_ERROR "No dependent Boost libraries found. Your CMake (${CMAKE_VERSION}) version might be too old for the version of boost you are using (${Boost_MAJOR_VERSION}.${Boost_MINOR_VERSION}.${Boost_SUBMINOR_VERSION}). In that case, you should have received warnings above of the type: 'Imported targets not available for Boost version ${Boost_VERSION}'")
++#endif()
+ 
+ find_package(HarfBuzz 0.9.19 REQUIRED QUIET)
+ message(STATUS "Harfbuzz: ${HARFBUZZ_VERSION}")
+@@ -103,13 +106,21 @@ find_package(Freetype 2.4.9 REQUIRED QUIET)
+ message(STATUS "Freetype: ${FREETYPE_VERSION_STRING}")
+ include_directories(${FREETYPE_INCLUDE_DIRS})
+ 
++set(ENV{PKG_CONFIG_PATH} "/emsdk/upstream/emscripten/cache/sysroot/lib/pkgconfig")
++
+ find_package(GLIB2 2.26 REQUIRED QUIET)
+ message(STATUS "Glib: ${GLIB2_VERSION}")
+ include_directories(${GLIB2_INCLUDE_DIRS})
+ 
++#find_package(PkgConfig REQUIRED)
++#pkg_search_module(GLIB2 REQUIRED glib-2.0)
++#message(STATUS "Glib: ${GLIB2_VERSION}")
++#include_directories(${GLIB2_INCLUDE_DIRS})
++
+ find_package(LibXml2 2.9 REQUIRED QUIET)
+ message(STATUS "LibXml2: ${LIBXML2_VERSION_STRING}")
+ include_directories(${LIBXML2_INCLUDE_DIR})
++message(STATUS "LibXml2: ${LIBXML2_LIBRARIES}")
+ 
+ find_package(FLEX REQUIRED QUIET)
+ message(STATUS "Flex: ${FLEX_VERSION}")
+@@ -117,8 +128,8 @@ message(STATUS "Flex: ${FLEX_VERSION}")
+ find_package(BISON REQUIRED QUIET)
+ message(STATUS "Bison: ${BISON_VERSION}")
+ 
+-find_package(LibZip REQUIRED QUIET)
+-message(STATUS "LibZip: ${LIBZIP_VERSION}")
++find_package(LIBZIP REQUIRED QUIET)
++message(STATUS "LIBZIP: ${LIBZIP_VERSION}")
+ include_directories(${LIBZIP_INCLUDE_DIR_ZIP})
+ include_directories(${LIBZIP_INCLUDE_DIR_ZIPCONF})
+ 
+@@ -506,6 +517,8 @@ set(GUI_HEADERS
+   src/NetworkSignal.h
+   )
+ 
++set_source_files_properties(src/FontCache.cc PROPERTIES COMPILE_FLAGS -Wno-narrowing)
++
+ #file(GLOB Headers src/*.h src/*.hpp src/polyclipping/*.hpp)
+ #list(REMOVE_ITEM Headers ${CMAKE_SOURCE_DIR}/src/SparkleAutoUpdater.h)
+ 
+@@ -569,6 +582,8 @@ set(COMMON_LIBRARIES
+     ${OPENCSG_LIBRARY}
+     ${PLATFORM_LIBS})
+ 
++add_definitions(-DCGAL_DISABLE_ROUNDING_MATH_CHECK=ON)
++target_compile_options(OpenSCAD PUBLIC "-pthread" "-fexceptions")
+ target_link_libraries(OpenSCAD ${COMMON_LIBRARIES})
+ if(NOT HEADLESS)
+   target_link_libraries(OpenSCAD Qt5::Core Qt5::Widgets Qt5::Multimedia Qt5::OpenGL Qt5::Concurrent Qt5::Network ${QT5QSCINTILLA_LIBRARY} ${Qt5DBus_LIBRARIES})
+diff --git a/cmake/Modules/FindGLIB2.cmake b/cmake/Modules/FindGLIB2.cmake
+index 63d31b033..a91055238 100644
+--- a/cmake/Modules/FindGLIB2.cmake
++++ b/cmake/Modules/FindGLIB2.cmake
+@@ -20,7 +20,9 @@ endif()
+ 
+ find_package(PkgConfig REQUIRED)
+ 
+-pkg_search_module(GLIB2 REQUIRED glib-2.0)
++#set(CMAKE_SYSROOT "/home/dschroer/.emscripten_cache/sysroot")
++
++pkg_check_modules(GLIB2 REQUIRED glib-2.0)
+ message(STATUS "GLIB2_VERSION ${GLIB2_VERSION}")
+ #message(STATUS "GLIB2_LIBRARIES ${GLIB2_LIBRARIES}")
+ message(STATUS "GLIB2_LIBRARY_DIRS ${GLIB2_LIBRARY_DIRS}")
+@@ -48,8 +50,8 @@ foreach(GLIB2_LIB ${GLIB2_LIBRARY_NAMES})
+                PATHS ${GLIB2_LIBRARY_DIRS}
+                PATHS ${GLIB2_LIBDIR}
+                NO_DEFAULT_PATH)
+-#  message(STATUS "TMP: ${TMP}")
+-  list(APPEND GLIB2_LIBRARIES "${TMP}")
++  message(STATUS "TMP: ${TMP}")
++  #list(APPEND GLIB2_LIBRARIES "${TMP}")
+ endforeach()
+ message(STATUS "GLIB2_LIBRARIES:")
+ foreach(glib2libdir ${GLIB2_LIBRARIES})
+diff --git a/cmake/Modules/FindLib3MF.cmake b/cmake/Modules/FindLib3MF.cmake
+index 58a9022c7..11eb71655 100644
+--- a/cmake/Modules/FindLib3MF.cmake
++++ b/cmake/Modules/FindLib3MF.cmake
+@@ -11,14 +11,17 @@
+ 
+ message(STATUS "Searching for lib3mf.")
+ 
+-if (NOT $ENV{OPENSCAD_LIBRARIES} STREQUAL "")
++if (NOT OPENSCAD_LIBRARIES} STREQUAL "")
+   if (EXISTS "$ENV{OPENSCAD_LIBRARIES}/include/lib3mf/Model/COM/NMR_DLLInterfaces.h")
+     message(STATUS "found lib3mf (NMR_DLLInterfaces.h) in OPENSCAD_LIBRARIES.")
+-    set(LIB3MF_INCLUDE_DIRS "$ENV{OPENSCAD_LIBRARIES}/include/lib3mf" "$ENV{OPENSCAD_LIBRARIES}/include/lib3mf/Model/COM")
+-    set(LIB3MF_LIBDIR "$ENV{OPENSCAD_LIBRARIES}/lib")
++    set(LIB3MF_INCLUDE_DIRS "${OPENSCAD_LIBRARIES}/include/lib3mf" "${OPENSCAD_LIBRARIES}/include/lib3mf/Bindings/Cpp")
++    set(LIB3MF_LIBDIR "${OPENSCAD_LIBRARIES}/lib")
+   endif()
+ endif()
+ 
++#set(LIB3MF_INCLUDE_DIRS "/home/dschroer/.emscripten_cache/sysroot/include/Bindings/Cpp/")
++#set(LIB3MF_LIBDIR "/home/dschroer/.emscripten_cache/sysroot/lib")
++
+ if ("${LIB3MF_LIBDIR}" STREQUAL "")
+   if (EXISTS "/opt/include/lib3mf/Model/COM/NMR_DLLInterfaces.h")
+     set(LIB3MF_INCLUDE_DIRS "/opt/include/lib3mf" "/opt/include/lib3mf/Model/COM")
+diff --git a/src/cgalutils-polyhedron.cc b/src/cgalutils-polyhedron.cc
+index 5d783a810..c81914948 100644
+--- a/src/cgalutils-polyhedron.cc
++++ b/src/cgalutils-polyhedron.cc
+@@ -340,8 +340,8 @@ namespace CGALUtils {
+ 		std::ostringstream sstream;
+ 		sstream.precision(20);
+ 
+-    Polyhedron_writer writer;
+-    generic_print_polyhedron(sstream, p, writer);
++    // Polyhedron_writer writer;
++    // generic_print_polyhedron(sstream, p, writer);
+ 		
+ 		return sstream.str();
+ 	}
+diff --git a/src/cgalutils-tess.cc b/src/cgalutils-tess.cc
+index e7b4397c8..5e7bcbd22 100644
+--- a/src/cgalutils-tess.cc
++++ b/src/cgalutils-tess.cc
+@@ -7,10 +7,12 @@
+ #undef NDEBUG
+ #endif
+ #include <CGAL/Constrained_Delaunay_triangulation_2.h>
+-#if CGAL_VERSION_NR >= CGAL_VERSION_NUMBER(4,11,0)
+-  #include <CGAL/Triangulation_2_projection_traits_3.h>
++#if CGAL_VERSION_NR < 1050401000
++#include <CGAL/Triangulation_2_projection_traits_3.h>
++typedef CGAL::Triangulation_2_filtered_projection_traits_3<K> Projection;
+ #else
+-  #include <CGAL/Triangulation_2_filtered_projection_traits_3.h>
++#include <CGAL/Projection_traits_3.h>
++typedef CGAL::Filtered_projection_traits_3<K> Projection;
+ #endif
+ #include <CGAL/Triangulation_face_base_with_info_2.h>
+ #ifdef PREV_NDEBUG
+@@ -22,7 +24,6 @@ struct FaceInfo {
+   bool in_domain() { return nesting_level%2 == 1; }
+ };
+ 
+-typedef CGAL::Triangulation_2_filtered_projection_traits_3<K> Projection;
+ typedef CGAL::Triangulation_face_base_with_info_2<FaceInfo, K> Fbb;
+ typedef CGAL::Triangulation_data_structure_2<
+ 	CGAL::Triangulation_vertex_base_2<Projection>,
+diff --git a/src/import.cc b/src/import.cc
+index 18c93d2f5..683b913d8 100644
+--- a/src/import.cc
++++ b/src/import.cc
+@@ -50,7 +50,7 @@ namespace fs = boost::filesystem;
+ #include <boost/assign/std/vector.hpp>
+ using namespace boost::assign; // bring 'operator+=()' into scope
+ 
+-#include <boost/detail/endian.hpp>
++#include <boost/endian/arithmetic.hpp>
+ #include <cstdint>
+ 
+ extern PolySet * import_amf(std::string, const Location &loc);
+diff --git a/src/node.cc b/src/node.cc
+index f9f6aa112..35abd4938 100644
+--- a/src/node.cc
++++ b/src/node.cc
+@@ -73,7 +73,7 @@ std::string AbstractIntersectionNode::name() const
+ 
+ void AbstractNode::progress_prepare()
+ {
+-	std::for_each(this->children.begin(), this->children.end(), std::mem_fun(&AbstractNode::progress_prepare));
++	std::for_each(this->children.begin(), this->children.end(), std::mem_fn(&AbstractNode::progress_prepare));
+ 	this->progress_mark = ++progress_report_count;
+ }
+ 
+diff --git a/src/openscad.cc b/src/openscad.cc
+index b900ecbff..845617b0a 100644
+--- a/src/openscad.cc
++++ b/src/openscad.cc
+@@ -262,7 +262,7 @@ void set_render_color_scheme(const std::string color_scheme, const bool exit_if_
+ 
+ 	if (exit_if_not_found) {
+ 		PRINTB("Unknown color scheme '%s'. Valid schemes:", color_scheme);
+-		PRINT(boost::join(ColorMap::inst()->colorSchemeNames(), "\n"));
++		PRINT(boost::algorithm::join(ColorMap::inst()->colorSchemeNames(), "\n"));
+ 		exit(1);
+ 	} else {
+ 		PRINTB("Unknown color scheme '%s', using default '%s'.", arg_colorscheme % ColorMap::inst()->defaultColorSchemeName());
+@@ -845,7 +845,7 @@ int main(int argc, char **argv)
+ 		PlatformUtils::registerApplicationPath(app.applicationDirPath().toLocal8Bit().constData());
+ 	}
+ #else
+-	PlatformUtils::registerApplicationPath(fs::absolute(boost::filesystem::path(argv[0]).parent_path()).generic_string());
++	PlatformUtils::registerApplicationPath(fs::absolute(fs::path(argv[0]).parent_path()).generic_string());
+ #endif
+ 	
+ #ifdef Q_OS_MAC
+@@ -891,7 +891,7 @@ int main(int argc, char **argv)
+ 		("imgsize", po::value<string>(), "=width,height of exported png")
+ 		("render", po::value<string>()->implicit_value(""), "for full geometry evaluation when exporting png")
+ 		("preview", po::value<string>()->implicit_value(""), "[=throwntogether] -for ThrownTogether preview png")
+-		("view", po::value<CommaSeparatedVector>(), ("=view options: " + boost::join(viewOptions.names(), " | ")).c_str())
++		("view", po::value<CommaSeparatedVector>(), ("=view options: " + boost::algorithm::join(viewOptions.names(), " | ")).c_str())
+ 		("projection", po::value<string>(), "=(o)rtho or (p)erspective when exporting png")
+ 		("csglimit", po::value<unsigned int>(), "=n -stop rendering at n CSG elements when exporting png")
+ 		("colorscheme", po::value<string>(), ("=colorscheme: " +
+diff --git a/src/parser.y b/src/parser.y
+index a21a31c35..360c25d77 100644
+--- a/src/parser.y
++++ b/src/parser.y
+@@ -46,6 +46,7 @@
+ #include <sstream>
+ #include <boost/filesystem.hpp>
+ #include "boost-utils.h"
++#include <stack>
+ 
+ namespace fs = boost::filesystem;
+ 
