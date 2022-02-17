@@ -94,6 +94,12 @@ RUN emconfigure ./configure CFLAGS="-s USE_PTHREADS=1" --host none --with-gmp=/e
 RUN make && make install
 
 
+FROM emscripten/emsdk as doubleconversion
+COPY doubleconversion .
+RUN emcmake cmake -E env CXXFLAGS="-s USE_PTHREADS=1" cmake -B ../build . -DCMAKE_BUILD_TYPE=Release
+RUN cd ../build && make && make install
+
+
 FROM emscripten/emsdk as openscad
 RUN apt-get update && apt-get install pkg-config flex bison -y
 # Dependencies
@@ -106,6 +112,7 @@ COPY --from=harfbuzz /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/em
 COPY --from=fontconfig /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
 COPY --from=glib /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
 COPY --from=libzip /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
+COPY --from=doubleconversion /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
 # End Dependencies
 
 COPY openscad . 

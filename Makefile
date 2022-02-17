@@ -37,7 +37,8 @@ libs: libs/cgal \
 	libs/gmp-6.1.2 \
 	libs/mpfr-4.1.0 \
 	libs/zlib \
-	libs/libxml2
+	libs/libxml2 \
+	libs/doubleconversion
 
 SINGLE_BRANCH_MAIN=--branch main --single-branch
 SINGLE_BRANCH=--branch master --single-branch
@@ -79,6 +80,9 @@ libs/zlib:
 
 libs/libxml2:
 	git clone https://gitlab.gnome.org/GNOME/libxml2.git ${SHALLOW} ${SINGLE_BRANCH} $@
+
+libs/doubleconversion:
+	git clone https://github.com/google/double-conversion ${SHALLOW} ${SINGLE_BRANCH} $@
 
 libs/openscad:
 	git clone --recurse https://github.com/openscad/openscad.git ${SINGLE_BRANCH} $@
