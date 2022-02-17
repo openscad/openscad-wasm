@@ -11,11 +11,13 @@ Make sure that you have the following installed:
 - Deno
 
 To build the project:
+
 ```
 make all
 ```
 
 Or for specific steps:
+
 ```
 # Generate the library files
 make libs 
@@ -27,6 +29,7 @@ make build
 ## Usage
 
 There is an example project in the example folder. Run it using:
+
 ```
 cd example
 deno run --allow-net --allow-read server.ts
@@ -37,6 +40,7 @@ make example
 ```
 
 There are also automated tests that can be run using:
+
 ```
 cd tests
 deno test --allow-read --allow-write
@@ -49,6 +53,7 @@ make test
 ## API
 
 The project is an ES6 module. Simply import the module:
+
 ```ts
 import OpenSCAD from "./openscad.js";
 
