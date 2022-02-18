@@ -94,8 +94,14 @@ RUN emconfigure ./configure CFLAGS="-s USE_PTHREADS=1" --host none --with-gmp=/e
 RUN make && make install
 
 
+FROM emscripten/emsdk as doubleconversion
+COPY doubleconversion .
+RUN emcmake cmake -E env CXXFLAGS="-s USE_PTHREADS=1" cmake -B ../build . -DCMAKE_BUILD_TYPE=Release
+RUN cd ../build && make && make install
+
+
 FROM emscripten/emsdk as openscad
-RUN apt-get update && apt-get install pkg-config flex bison -y
+RUN apt-get update && apt-get install pkg-config flex bison gettext python-is-python3 -y
 # Dependencies
 COPY --from=boost /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
 COPY --from=gmp /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
@@ -106,22 +112,30 @@ COPY --from=harfbuzz /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/em
 COPY --from=fontconfig /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
 COPY --from=glib /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
 COPY --from=libzip /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
+COPY --from=doubleconversion /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
 # End Dependencies
 
 COPY openscad . 
-RUN export PKG_CONFIG_PATH="/emsdk/upstream/emscripten/cache/sysroot/lib/pkgconfig"
-RUN emcmake cmake -B ../build . -DNULLGL=ON \
+RUN export PKG_CONFIG_PATH="/emsdk/upstream/emscripten/cache/sysroot/lib/pkgconfig" && \
+    emcmake cmake -B ../build . \
+    -DWASM=ON \
+    -DSNAPSHOT=ON \
+    -DEXPERIMENTAL=ON \
+    -DENABLE_CAIRO=OFF \
+    -DUSE_MIMALLOC=OFF \
+    -DBoost_USE_STATIC_RUNTIME=ON \
+    -DBoost_USE_STATIC_LIBS=ON \
     -DCMAKE_BUILD_TYPE=Release \
     -DHARFBUZZ_INCLUDE_DIRS=/emsdk/upstream/emscripten/cache/sysroot/include/harfbuzz \
     -DFONTCONFIG_INCLUDE_DIR=/emsdk/upstream/emscripten/cache/sysroot/include/fontconfig \
     -DFONTCONFIG_LIBRARIES=libfontconfig.a
 
 # Hack to fix build includes
-RUN sed -e "s|-isystem /emsdk/upstream/emscripten/cache/sysroot/include||g" -i ../build/CMakeFiles/OpenSCAD.dir/includes_C.rsp
-RUN sed -e "s|-isystem /emsdk/upstream/emscripten/cache/sysroot/include||g" -i ../build/CMakeFiles/OpenSCAD.dir/includes_CXX.rsp
+RUN sed -e "s|-isystem /emsdk/upstream/emscripten/cache/sysroot/include[^/]||g" -i ../build/CMakeFiles/OpenSCAD.dir/includes_C.rsp
+RUN sed -e "s|-isystem /emsdk/upstream/emscripten/cache/sysroot/include[^/]||g" -i ../build/CMakeFiles/OpenSCAD.dir/includes_CXX.rsp
 RUN sed -e "s|-lfontconfig|/emsdk/upstream/emscripten/cache/sysroot/lib/libglib-2.0.a /emsdk/upstream/emscripten/cache/sysroot/lib/libzip.a /emsdk/upstream/emscripten/cache/sysroot/lib/libz.a /emsdk/upstream/emscripten/cache/sysroot/lib/libfontconfig.a|g" -i ../build/CMakeFiles/OpenSCAD.dir/linklibs.rsp
 
 # Add emscripten flags here
 RUN sed -e "s|em++|em++ -s USE_PTHREADS=1 -s NO_DISABLE_EXCEPTION_CATCHING -s FORCE_FILESYSTEM=1 -s ALLOW_MEMORY_GROWTH=1 -s EXTRA_EXPORTED_RUNTIME_METHODS=['FS'] -s EXPORTED_RUNTIME_METHODS=callMain -s EXPORT_ES6=1 -s ENVIRONMENT=web,worker -s MODULARIZE=1 -s EXPORT_NAME=OpenSCAD -s EXIT_RUNTIME=1|g" -i ../build/CMakeFiles/OpenSCAD.dir/link.txt
 
-RUN cd ../build && make -j12
+RUN cd ../build && make -j12 VERBOSE=1
