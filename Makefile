@@ -86,8 +86,6 @@ libs/doubleconversion:
 
 libs/openscad:
 	git clone --recurse https://github.com/openscad/openscad.git ${SINGLE_BRANCH} $@
-	git -C $@ checkout f4d57fb3b2da39953c843c0372b5a0a8730b3189
-	git -C $@ apply ../../patches/openscad-2019.patch
 
 libs/boost:
 	git clone --recurse https://github.com/boostorg/boost.git ${SHALLOW} ${SINGLE_BRANCH} $@
