@@ -20,7 +20,7 @@ build/openscad.js: build
 
 build: libs
 	docker build libs -f Dockerfile --target openscad -t openscad-wasm
-	mkdir build
+	mkdir -p build
 
 libs: libs/cgal \
 	libs/eigen \
