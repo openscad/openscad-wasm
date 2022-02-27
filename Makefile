@@ -11,16 +11,19 @@ test:
 example:
 	cd example; deno run --allow-net --allow-read server.ts
 
-build/openscad.js: build
+.PHONY: build
+build: build/openscad.js
+
+build/openscad.js: build/.base-image
+	docker build libs/openscad -f Dockerfile -t openscad
 	docker run --name tmpcpy openscad-wasm
-	docker cp tmpcpy:/build/openscad.js build
-	docker cp tmpcpy:/build/openscad.worker.js build
-	docker cp tmpcpy:/build/openscad.wasm build
+	docker cp tmpcpy:/build/ build
 	docker rm tmpcpy
 
-build: libs
-	docker build libs -f Dockerfile --target openscad -t openscad-wasm
+build/.base-image: libs
+	docker build libs -f Dockerfile.base -t openscad-base
 	mkdir -p build
+	touch $@
 
 libs: libs/cgal \
 	libs/eigen \
