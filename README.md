@@ -24,6 +24,9 @@ make libs
 
 # Build the project
 make build
+
+# Build the project in debug mode
+make ENV=Debug build
 ```
 
 ## Usage
