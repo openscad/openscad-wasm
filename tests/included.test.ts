@@ -1,5 +1,6 @@
 import { assertEquals } from "https://deno.land/std@0.125.0/testing/asserts.ts";
 import OpenScad from "../build/openscad.js";
+import { loadTestFiles } from "./testing.ts";
 
 for await (const entry of Deno.readDir(".")) {
   if (!entry.isDirectory) {
@@ -23,11 +24,4 @@ async function runTest(directory: string) {
 
   const output = instance.FS.readFile("out.stl");
   await Deno.writeFile(`${directory}/out.stl`, output);
-}
-
-async function loadTestFiles(instance: any, directory: string) {
-  for await (const testFile of Deno.readDir(directory)) {
-    const content = await Deno.readFile(`${directory}/${testFile.name}`);
-    instance.FS.writeFile(`/${testFile.name}`, content);
-  }
 }

@@ -5,7 +5,7 @@ clean:
 	rm -rf build
 
 test:
-	cd tests; deno test --allow-read --allow-write
+	cd tests; deno test --allow-read --allow-write --jobs 4
 
 .PHONY: example
 example:
