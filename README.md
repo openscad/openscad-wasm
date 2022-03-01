@@ -96,6 +96,6 @@ For more information check out [MDN SharedArrayBuffer](https://developer.mozilla
 - [ ] Merge WASM patch into Boost.Filesystem
 
 ## Known Issues
-- [ ] text does not render
-    Fonts appear to be missing but FontConfig seems to be working correctly. This seems to just be a config issue at runtime.
+- [x] `text` does not render
+    See the test setup in [./tests/text](./tests/text) for an example of how to configure fonts in the FS.
 - [ ] CGAL error on intersection between cube and circle (csg test)
