@@ -64,6 +64,7 @@ libs/eigen:
 
 libs/fontconfig:
 	git clone https://gitlab.freedesktop.org/fontconfig/fontconfig.git ${SHALLOW} ${SINGLE_BRANCH_MAIN} $@
+	git -C $@ apply ../../patches/fontconfig.patch 
 
 libs/freetype:
 	git clone https://gitlab.freedesktop.org/freetype/freetype.git ${SHALLOW} ${SINGLE_BRANCH} $@
