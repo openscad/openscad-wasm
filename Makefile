@@ -19,12 +19,12 @@ endif
 .PHONY: build
 build: build/openscad.js
 
-build/openscad.js: build/.image
+build/openscad.js: build/.image Dockerfile
 	docker run --name tmpcpy openscad
 	docker cp tmpcpy:/build .
 	docker rm tmpcpy
 
-build/.image: build/.base-image
+build/.image: build/.base-image Dockerfile.base
 	docker build libs/openscad -f Dockerfile -t openscad ${DOCKER_FLAGS}
 	mkdir -p build
 	touch $@
