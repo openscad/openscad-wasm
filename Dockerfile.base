@@ -40,7 +40,7 @@ RUN chmod +x build.sh; ./build.sh
 FROM emscripten/emsdk as freetype
 COPY --from=zlib /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
 COPY freetype . 
-RUN emcmake cmake -B ../build . -DFT_REQUIRE_ZLIB=TRUE -DCMAKE_BUILD_TYPE=Release
+RUN emcmake cmake -E env CFLAGS="-pthread" cmake -B ../build . -DFT_REQUIRE_ZLIB=TRUE -DCMAKE_BUILD_TYPE=Release
 RUN cd ../build && make && make install
 
 
@@ -57,9 +57,8 @@ COPY --from=freetype /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/em
 COPY --from=libxml2 /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
 COPY fontconfig . 
 RUN FREETYPE_CFLAGS="-I/emsdk/upstream/emscripten/cache/sysroot/include/freetype2" FREETYPE_LIBS="-lfreetype -lz" emconfigure ./autogen.sh CFLAGS="-s USE_PTHREADS=1" --host none --disable-docs --disable-shared --enable-static --sysconfdir=/ --localstatedir=/ --with-default-fonts=/fonts --enable-libxml2 --prefix=/emsdk/upstream/emscripten/cache/sysroot
-RUN echo "all install:" > test/Makefile.in
 RUN emmake make
-RUN emmake make install || true
+RUN emmake make install
 
 
 FROM emscripten/emsdk as harfbuzz
@@ -101,7 +100,7 @@ RUN cd ../build && make && make install
 
 
 FROM emscripten/emsdk as openscad-base
-RUN apt-get update && apt-get install pkg-config flex bison gettext python-is-python3 -y
+RUN apt-get update && apt-get install pkg-config flex bison gettext python-is-python3 gpg -y
 COPY --from=boost /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
 COPY --from=gmp /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
 COPY --from=mpfr /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
