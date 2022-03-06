@@ -4,3 +4,5 @@ tests/**/out.stl
 .vscode
 runtime/dist
 node_modules
+res
+!res/fonts

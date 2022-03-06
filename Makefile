@@ -22,7 +22,7 @@ endif
 .PHONY: build
 build: build/openscad.js build/openscad.runtime.js
 
-build/openscad.runtime.js: runtime/node_modules runtime/**/*
+build/openscad.runtime.js: runtime/node_modules runtime/**/* res
 	cd runtime; npm run build
 	cp runtime/dist/* build
 
@@ -125,3 +125,9 @@ libs/mpfr-4.1.0:
 	wget  https://www.mpfr.org/mpfr-current/mpfr-4.1.0.tar.xz
 	tar xf mpfr-4.1.0.tar.xz -C libs
 	rm mpfr-4.1.0.tar.xz
+
+res: \
+	res/liberation
+
+res/liberation:
+	git clone --recurse https://github.com/shantigilbert/liberation-fonts-ttf.git ${SHALLOW} ${SINGLE_BRANCH} $@

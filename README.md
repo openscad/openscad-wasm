@@ -59,9 +59,13 @@ The project is an ES6 module. Simply import the module:
 
 ```ts
 import OpenSCAD from "./openscad.js";
+import { addFonts } from "./openscad.runtime.js";
 
 // Instantiate the application
 const instance = await OpenSCAD({ noInitialRun: true });
+
+// OPTIONAL: add fonts to the FS
+addFonts(instance);
 
 // Write a file to the filesystem
 instance.FS.writeFile("/input.scad", `cube(10);`);

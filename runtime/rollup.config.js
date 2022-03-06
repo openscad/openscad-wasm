@@ -1,4 +1,5 @@
 import typescript from '@rollup/plugin-typescript';
+import embedFile from "./plugins/embed-file";
 
 export default {
   input: "src/openscad.runtime.ts",
@@ -6,5 +7,9 @@ export default {
     file: "dist/openscad.runtime.js",
     format: "esm",
   },
-  plugins: [typescript({ tsconfig: './tsconfig.json' })]
+
+  plugins: [
+    embedFile(),
+    typescript({ tsconfig: './tsconfig.json' }),
+  ]
 };

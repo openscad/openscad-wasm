@@ -1,5 +1,6 @@
 import { assertEquals } from "https://deno.land/std@0.125.0/testing/asserts.ts";
 import OpenScad from "../build/openscad.js";
+import { addFonts } from "../build/openscad.runtime.js";
 import { loadTestFiles } from "./testing.ts";
 
 for await (const entry of Deno.readDir(".")) {
@@ -16,6 +17,7 @@ for await (const entry of Deno.readDir(".")) {
 async function runTest(directory: string) {
 
   const instance = await OpenScad({ noInitialRun: true });
+  addFonts(instance);
 
   await loadTestFiles(instance, directory);
   

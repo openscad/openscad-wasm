@@ -1,1 +1,2 @@
-/// <reference path="openscad.ts" />
+/// <reference path="./openscad.ts" />
+export * from "./fonts";
