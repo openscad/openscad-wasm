@@ -1,7 +1,7 @@
 DOCKER_TAG_BASE ?= openscad-base
 DOCKER_TAG_OPENSCAD ?= openscad
 
-all: build/openscad.js
+all: build
 
 clean:
 	rm -rf libs
@@ -20,12 +20,21 @@ DOCKER_FLAGS= --build-arg CMAKE_BUILD_TYPE=Debug --build-arg EMXX_FLAGS="-gsourc
 endif
 
 .PHONY: build
-build: build/openscad.js
+build: build/openscad.js build/openscad.runtime.js
+
+build/openscad.runtime.js: runtime/node_modules runtime/**/*
+	cd runtime; npm run build
+	cp runtime/dist/* build
+
+runtime/node_modules:
+	cd runtime; npm install
 
 build/openscad.js: build/.image 
 	docker run --name tmpcpy openscad
 	docker cp tmpcpy:/build .
 	docker rm tmpcpy
+
+	 sed -i '1s&^&/// <reference types="./openscad.d.ts" />\n&' build/openscad.js
 
 build/.image: build/.base-image Dockerfile
 	docker build libs/openscad -f Dockerfile -t $(DOCKER_TAG_OPENSCAD) ${DOCKER_FLAGS}

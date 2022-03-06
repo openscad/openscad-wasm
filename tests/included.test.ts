@@ -22,6 +22,6 @@ async function runTest(directory: string) {
   const code = instance.callMain([`/test.scad`, "-o", "out.stl"]);
   assertEquals(0, code);
 
-  const output = instance.FS.readFile("out.stl");
+  const output = instance.FS.readFile("out.stl", { encoding: "binary" });
   await Deno.writeFile(`${directory}/out.stl`, output);
 }

@@ -2,3 +2,5 @@ libs
 build
 tests/**/out.stl
 .vscode
+runtime/dist
+node_modules
