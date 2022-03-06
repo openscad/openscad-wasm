@@ -1,4 +1,4 @@
 declare module '../../res/*' {
-    const data: Record<string, number[]> | number[];
+    const data: Record<string, string> | string;
     export default data;
 }

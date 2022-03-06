@@ -1,6 +1,6 @@
 import { assertEquals } from "https://deno.land/std@0.125.0/testing/asserts.ts";
 import OpenScad from "../build/openscad.js";
-import { addFonts } from "../build/openscad.runtime.js";
+import { addFonts } from "../build/openscad.fonts.js";
 import { loadTestFiles } from "./testing.ts";
 
 for await (const entry of Deno.readDir(".")) {

@@ -7,7 +7,7 @@ import glob from "glob";
 export default function embedFile() {
   function loadFile(path) {
     const content = readFileSync(path);
-    return `export default ${JSON.stringify(content.toJSON().data)};`;
+    return `export default "${content.toString("hex")}";`;
   }
 
   async function loadFolder(path) {
@@ -15,7 +15,7 @@ export default function embedFile() {
 
     const res = await promisify(glob)("**/*", { cwd: resolve(path) });
     for (const file of res) {
-      files[file] = readFileSync(join(path, file)).toJSON().data;
+      files[file] = readFileSync(join(path, file)).toString("hex");
     }
 
     return `export default ${JSON.stringify(files)};`;
