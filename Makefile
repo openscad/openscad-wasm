@@ -101,7 +101,7 @@ libs/doubleconversion:
 	git clone https://github.com/google/double-conversion ${SHALLOW} ${SINGLE_BRANCH} $@
 
 libs/openscad:
-	git clone --recurse https://github.com/openscad/openscad.git ${SINGLE_BRANCH} $@
+	git clone --recurse https://github.com/ochafik/openscad.git --branch filtered-number --single-branch $@
 
 libs/boost:
 	git clone --recurse https://github.com/boostorg/boost.git ${SHALLOW} ${SINGLE_BRANCH} $@
