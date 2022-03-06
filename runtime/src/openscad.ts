@@ -19,6 +19,7 @@ export interface FS {
   unlink(path: string): void;
 }
 
+// deno-lint-ignore no-unused-vars
 export default function (init: InitOptions): Promise<OpenSCAD> {
   // NULL implementation. Will be replaced by the actual OpenSCAD library
   return null as unknown as Promise<OpenSCAD>;
