@@ -8,6 +8,12 @@ app.use(logger.logger);
 
 // Serve static files from example/www and build folders
 app.use(async (context, next) => {
+  if(context.request.url.pathname.startsWith("/src")){
+    context.request.url.pathname = context.request.url.pathname.substring("/src".length);
+    await context.send({ root: join(Deno.cwd(), "../libs/openscad") });
+    return;
+  }
+
   try {
     await context.send({ root: join(Deno.cwd(), "www"), index: "index.html" });
   } catch {
