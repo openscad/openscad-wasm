@@ -23,27 +23,29 @@ endif
 build: build/openscad.js build/openscad.runtime.js
 
 build/openscad.runtime.js: runtime/node_modules runtime/**/* res
+	mkdir -p build
 	cd runtime; npm run build
 	cp runtime/dist/* build
 
 runtime/node_modules:
 	cd runtime; npm install
 
-build/openscad.js: build/.image 
+build/openscad.js: .image.make
+	mkdir -p build
 	docker run --name tmpcpy openscad
-	docker cp tmpcpy:/build .
+	docker cp tmpcpy:/build/openscad.js build/
+	docker cp tmpcpy:/build/openscad.wasm build/
+	docker cp tmpcpy:/build/openscad.wasm.map build/ || true
 	docker rm tmpcpy
 
-	 sed -i '1s&^&/// <reference types="./openscad.d.ts" />\n&' build/openscad.js
+	sed -i '1s&^&/// <reference types="./openscad.d.ts" />\n&' build/openscad.js
 
-build/.image: build/.base-image Dockerfile
+.image.make: .base-image.make Dockerfile
 	docker build libs/openscad -f Dockerfile -t $(DOCKER_TAG_OPENSCAD) ${DOCKER_FLAGS}
-	mkdir -p build
 	touch $@
 
-build/.base-image: libs Dockerfile.base
+.base-image.make: libs Dockerfile.base
 	docker build libs -f Dockerfile.base -t $(DOCKER_TAG_BASE)
-	mkdir -p build
 	touch $@
 
 libs: libs/cgal \

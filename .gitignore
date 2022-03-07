@@ -6,3 +6,4 @@ runtime/dist
 node_modules
 res
 !res/fonts
+*.make
