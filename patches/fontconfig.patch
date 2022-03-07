@@ -1,5 +1,5 @@
 diff --git a/Makefile.am b/Makefile.am
-index 6d4cd32..0dee636 100644
+index 6d4cd32..3e88fe0 100644
 --- a/Makefile.am
 +++ b/Makefile.am
 @@ -21,10 +21,7 @@
@@ -14,3 +14,12 @@ index 6d4cd32..0dee636 100644
  if ENABLE_DOCS
  SUBDIRS += doc
  endif
+@@ -86,7 +83,7 @@ xml_DATA = fonts.dtd
+ if !ENABLE_CACHE_BUILD
+   RUN_FC_CACHE_TEST=false
+ else
+-  RUN_FC_CACHE_TEST=test -z "$(DESTDIR)"
++  RUN_FC_CACHE_TEST=false
+ endif
+ 
+ # Creating ChangeLog from git log:

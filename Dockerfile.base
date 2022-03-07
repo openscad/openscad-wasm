@@ -1,7 +1,7 @@
 FROM emscripten/emsdk as boost
 COPY boost . 
 RUN ./bootstrap.sh
-RUN ./b2 toolset=emscripten cxxflags="-std=c++11 -stdlib=libc++" linkflags="-stdlib=libc++" cxxflags=-DPTHREADS cxxflags=-DBOOST_THREAD_POSIX cxxflags=-pthread cxxflags=-DTHREAD release --disable-icu --with-regex --with-filesystem --with-system --with-thread --with-program_options install link=static runtime-link=static --prefix=/emsdk/upstream/emscripten/cache/sysroot
+RUN ./b2 toolset=emscripten cxxflags="-std=c++11 -stdlib=libc++" linkflags="-stdlib=libc++" release --disable-icu --with-regex --with-filesystem --with-system --with-program_options install link=static runtime-link=static --prefix=/emsdk/upstream/emscripten/cache/sysroot
 
 
 FROM emscripten/emsdk as zlib
@@ -27,7 +27,6 @@ RUN apt-get update \
     libtool \
     texinfo \
     pkgconf \
-    # needed for Meson
     ninja-build \
     python3-pip \
   && pip3 install meson
@@ -40,7 +39,7 @@ RUN chmod +x build.sh; ./build.sh
 FROM emscripten/emsdk as freetype
 COPY --from=zlib /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
 COPY freetype . 
-RUN emcmake cmake -E env CFLAGS="-pthread" cmake -B ../build . -DFT_REQUIRE_ZLIB=TRUE -DCMAKE_BUILD_TYPE=Release
+RUN emcmake cmake -B ../build . -DFT_REQUIRE_ZLIB=TRUE -DCMAKE_BUILD_TYPE=Release
 RUN cd ../build && make && make install
 
 
@@ -56,7 +55,7 @@ COPY --from=zlib /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscri
 COPY --from=freetype /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
 COPY --from=libxml2 /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
 COPY fontconfig . 
-RUN FREETYPE_CFLAGS="-I/emsdk/upstream/emscripten/cache/sysroot/include/freetype2" FREETYPE_LIBS="-lfreetype -lz" emconfigure ./autogen.sh CFLAGS="-s USE_PTHREADS=1" --host none --disable-docs --disable-shared --enable-static --sysconfdir=/ --localstatedir=/ --with-default-fonts=/fonts --enable-libxml2 --prefix=/emsdk/upstream/emscripten/cache/sysroot
+RUN FREETYPE_CFLAGS="-I/emsdk/upstream/emscripten/cache/sysroot/include/freetype2" FREETYPE_LIBS="-lfreetype -lz" emconfigure ./autogen.sh --host none --disable-docs --disable-shared --enable-static --sysconfdir=/ --localstatedir=/ --with-default-fonts=/fonts --enable-libxml2 --prefix=/emsdk/upstream/emscripten/cache/sysroot
 RUN emmake make
 RUN emmake make install
 
@@ -64,7 +63,7 @@ RUN emmake make install
 FROM emscripten/emsdk as harfbuzz
 COPY --from=freetype /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
 COPY harfbuzz . 
-RUN emcmake cmake -E env CXXFLAGS="-s USE_PTHREADS=1" cmake -B ../build . -DCMAKE_BUILD_TYPE=Release -DHB_HAVE_FREETYPE=ON
+RUN emcmake cmake -B ../build . -DCMAKE_BUILD_TYPE=Release -DHB_HAVE_FREETYPE=ON
 RUN cd ../build && make && make install
 
 
@@ -89,13 +88,13 @@ RUN make && make install
 FROM emscripten/emsdk as mpfr
 COPY --from=gmp /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
 COPY mpfr-4.1.0 . 
-RUN emconfigure ./configure CFLAGS="-s USE_PTHREADS=1" --host none --with-gmp=/emsdk/upstream/emscripten/cache/sysroot --prefix=/emsdk/upstream/emscripten/cache/sysroot
+RUN emconfigure ./configure --host none --with-gmp=/emsdk/upstream/emscripten/cache/sysroot --prefix=/emsdk/upstream/emscripten/cache/sysroot
 RUN make && make install
 
 
 FROM emscripten/emsdk as doubleconversion
 COPY doubleconversion .
-RUN emcmake cmake -E env CXXFLAGS="-s USE_PTHREADS=1" cmake -B ../build . -DCMAKE_BUILD_TYPE=Release
+RUN emcmake cmake -B ../build . -DCMAKE_BUILD_TYPE=Release
 RUN cd ../build && make && make install
 
 
