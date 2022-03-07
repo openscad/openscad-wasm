@@ -20,9 +20,9 @@ DOCKER_FLAGS= --build-arg CMAKE_BUILD_TYPE=Debug --build-arg EMXX_FLAGS="-gsourc
 endif
 
 .PHONY: build
-build: build/openscad.js build/openscad.runtime.js
+build: build/openscad.js build/openscad.fonts.js
 
-build/openscad.runtime.js: runtime/node_modules runtime/**/* res
+build/openscad.fonts.js: runtime/node_modules runtime/**/* res
 	mkdir -p build
 	cd runtime; npm run build
 	cp runtime/dist/* build
