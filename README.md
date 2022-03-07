@@ -88,7 +88,7 @@ For more information on reading and writing files check out the [Emscripten File
 
 ## Future work
 - [x] Fix NULLGL in OpenSCAD 2021
-- [X] Merge WASM patch into Boost.Filesystem. Patch was rejected https://github.com/boostorg/filesystem/pull/230
+- [-] Merge WASM patch into Boost.Filesystem. Patch was rejected https://github.com/boostorg/filesystem/pull/230
 
 ## Known Issues
 - [x] `text` does not render
