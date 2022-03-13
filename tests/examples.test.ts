@@ -10,6 +10,9 @@ const sets = [
   "Advanced",
   "Parametric",
 ];
+const exclude = [
+  "Advanced: module_recursion.scad"
+]
 
 const examples = JSON.parse(
   await Deno.readTextFile(join(exampleDir, "examples.json")),
@@ -17,8 +20,13 @@ const examples = JSON.parse(
 
 for (const set of sets) {
   for (const file of examples[set]) {
+    const name = `${set}: ${file}`;
+    if(exclude.indexOf(name) != -1) {
+      continue;
+    }
+    
     Deno.test({
-      name: `${set}: ${file}`,
+      name,
       fn: () => runTest(file, join(exampleDir, set)),
     });
   }
@@ -30,6 +38,6 @@ async function runTest(entrypoint: string, directory: string) {
 
   await loadTestFiles(instance, directory);
 
-  const code = instance.callMain([entrypoint, "-o", "out.stl"]);
+  const code = instance.callMain([entrypoint, "--enable=roof", "-o", "out.stl"]);
   assertEquals(0, code);
 }
