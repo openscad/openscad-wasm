@@ -7,7 +7,12 @@ const bundle = (name) => ({
     file: `dist/${name}.js`,
     format: "esm",
   },
-  plugins: [embedFile(), typescript({ tsconfig: "./tsconfig.json" })],
+  plugins: [
+    embedFile(), 
+    typescript({ tsconfig: "./tsconfig.json" })],
 });
 
-export default [bundle("openscad.fonts")];
+export default [
+  bundle("openscad.fonts"),
+  bundle("openscad.mcad")
+];

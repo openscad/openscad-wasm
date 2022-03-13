@@ -13,7 +13,7 @@ export default function embedFile() {
   async function loadFolder(path) {
     const files = {};
 
-    const res = await promisify(glob)("**/*", { cwd: resolve(path) });
+    const res = await promisify(glob)("**/*", { cwd: resolve(path), nodir: true });
     for (const file of res) {
       files[file] = readFileSync(join(path, file)).toString("hex");
     }

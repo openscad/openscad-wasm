@@ -129,7 +129,11 @@ libs/mpfr-4.1.0:
 	rm mpfr-4.1.0.tar.xz
 
 res: \
-	res/liberation
+	res/liberation \
+	res/MCAD
 
 res/liberation:
 	git clone --recurse https://github.com/shantigilbert/liberation-fonts-ttf.git ${SHALLOW} ${SINGLE_BRANCH} $@
+
+res/MCAD:
+	git clone https://github.com/openscad/MCAD.git ${SHALLOW} ${SINGLE_BRANCH} $@
