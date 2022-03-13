@@ -84,18 +84,3 @@ const output = instance.FS.readFile("/cube.stl");
 ```
 
 For more information on reading and writing files check out the [Emscripten File System API](https://emscripten.org/docs/api_reference/Filesystem-API.html).
-
-## Project Status
-- [x] module builds
-- [x] module runs
-- [ ] library created
-- [ ] tests exist
-
-## Future work
-- [x] Fix NULLGL in OpenSCAD 2021
-- [-] Merge WASM patch into Boost.Filesystem. Patch was rejected https://github.com/boostorg/filesystem/pull/230
-
-## Known Issues
-- [x] `text` does not render
-    See the test setup in [./tests/text](./tests/text) for an example of how to configure fonts in the FS.
-- [ ] CGAL error on intersection between cube and circle (csg test)

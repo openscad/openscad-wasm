@@ -1,5 +1,6 @@
 import { assertEquals } from "https://deno.land/std@0.125.0/testing/asserts.ts";
 import OpenScad from "../build/openscad.js";
+import { addFonts } from "../build/openscad.fonts.js";
 import { join } from "https://deno.land/std/path/mod.ts";
 import { loadTestFiles } from "./testing.ts";
 
@@ -7,7 +8,6 @@ const exampleDir = "../libs/openscad/examples/";
 const sets = [
   "Basics",
   "Advanced",
-  "Functions",
   "Parametric",
 ];
 
@@ -26,6 +26,7 @@ for (const set of sets) {
 
 async function runTest(entrypoint: string, directory: string) {
   const instance = await OpenScad({ noInitialRun: true });
+  addFonts(instance);
 
   await loadTestFiles(instance, directory);
 
