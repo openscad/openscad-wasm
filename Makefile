@@ -20,7 +20,7 @@ DOCKER_FLAGS= --build-arg CMAKE_BUILD_TYPE=Debug --build-arg EMXX_FLAGS="-gsourc
 endif
 
 .PHONY: build
-build: build/openscad.js build/openscad.fonts.js
+build: build/openscad.wasm.js build/openscad.fonts.js
 
 build/openscad.fonts.js: runtime/node_modules runtime/**/* res
 	mkdir -p build
@@ -30,15 +30,13 @@ build/openscad.fonts.js: runtime/node_modules runtime/**/* res
 runtime/node_modules:
 	cd runtime; npm install
 
-build/openscad.js: .image.make
+build/openscad.wasm.js: .image.make
 	mkdir -p build
 	docker run --name tmpcpy openscad
-	docker cp tmpcpy:/build/openscad.js build/
+	docker cp tmpcpy:/build/openscad.js build/openscad.wasm.js
 	docker cp tmpcpy:/build/openscad.wasm build/
 	docker cp tmpcpy:/build/openscad.wasm.map build/ || true
 	docker rm tmpcpy
-
-	sed -i '1s&^&/// <reference types="./openscad.d.ts" />\n&' build/openscad.js
 
 .image.make: .base-image.make Dockerfile
 	docker build libs/openscad -f Dockerfile -t $(DOCKER_TAG_OPENSCAD) ${DOCKER_FLAGS}

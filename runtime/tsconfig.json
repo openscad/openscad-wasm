@@ -2,6 +2,7 @@
   "include": ["src"],
   "exclude": ["dist"],
   "compilerOptions": {
+    "module": "esnext",
     "target": "esnext",
     "moduleResolution": "node",
     "esModuleInterop": false,
