@@ -65,7 +65,7 @@ import { addFonts } from "./openscad.fonts.js";
 import { addMCAD } from "./openscad.mcad.js";
 
 // Instantiate the application
-const instance = await OpenSCAD({ noInitialRun: true });
+const instance = await OpenSCAD();
 
 // OPTIONAL: add fonts to the FS
 addFonts(instance);
