@@ -1,9 +1,25 @@
 <!DOCTYPE html>
 <html>
-
-<body>
+<head>
+    <script type="importmap">
+        {
+            "imports": {
+                "openscad": "/openscad.js",
+                "three": "/three/build/three.module.js",
+                "three/examples/jsm/loaders/STLLoader": "/three/examples/jsm/loaders/STLLoader.js",
+                "three/examples/jsm/controls/OrbitControls": "/three/examples/jsm/controls/OrbitControls.js",
+                "three/examples/jsm/libs/stats.module": "/three/examples/jsm/libs/stats.module.js"
+            }
+        }
+    </script>
+</head>
+<body style="margin:0">
     <script type="module">
-        import OpenScad from "./openscad.js";
+        import OpenScad from "openscad";
+        import * as THREE from 'three'
+        import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
+        import { STLLoader } from 'three/examples/jsm/loaders/STLLoader'
+        import Stats from 'three/examples/jsm/libs/stats.module'
 
         function downloadFile(blob, fileName) {
             const link = document.createElement('a');
@@ -14,14 +30,111 @@
             link.remove();
         };
 
-        const instance = await OpenScad({ noInitialRun: true });
+        const material = new THREE.MeshPhysicalMaterial({
+            color: 0x004400,
+            metalness: 0.25,
+            roughness: 0.1,
+            opacity: 0,
+            transparent: false,
+            transmission: 0.8,
+            clearcoat: 1.0,
+            clearcoatRoughness: 0.25
+        })
 
-        instance.FS.writeFile("/input.scad", `cube(10);`);
-        instance.callMain(["/input.scad", "-o", "cube.stl"]);
-        const output = instance.FS.readFile("/cube.stl");
+        var output;
 
-        downloadFile(new Blob([output], { type: "application/octet-stream" }), "cube.stl");
+        async function generateMesh() {
+            var instance = await OpenScad({ noInitialRun: true });
+            instance.FS.writeFile("/input2.scad", document.getElementById("input").value);
+            instance.callMain(["/input2.scad", "-o", "cube2.stl"]);
+            output = instance.FS.readFile("/cube2.stl");
+
+            var t = loader.parse(output.buffer);
+            var outMesh = new THREE.Mesh(t, material);
+
+            return outMesh;
+
+        }
+
+        // Three.js tutorial https://sbcode.net/threejs/loaders-stl/
+        const scene = new THREE.Scene()
+        scene.add(new THREE.AxesHelper(5))
+
+        const light = new THREE.SpotLight()
+        light.position.set(15, 15, 15)
+        scene.add(light)
+
+        const light2 = new THREE.AmbientLight()
+        scene.add(light2)
+
+        const camera = new THREE.PerspectiveCamera(
+            75,
+            window.innerWidth*.8 / window.innerHeight,
+            0.1,
+            1000
+        )
+        camera.position.z = 3
+
+        const renderer = new THREE.WebGLRenderer()
+        renderer.outputEncoding = THREE.sRGBEncoding
+        
+        renderer.setSize(window.innerWidth*.8, window.innerHeight)
+        document.getElementById("render").appendChild(renderer.domElement)
+
+        const controls = new OrbitControls(camera, renderer.domElement)
+        controls.enableDamping = true
+
+        const loader = new STLLoader()
+        var mesh = await generateMesh();
+
+        scene.add(mesh);
+
+        window.addEventListener('resize', onWindowResize, false)
+        function onWindowResize() {
+            camera.aspect = window.innerWidth*.8 / window.innerHeight
+            camera.updateProjectionMatrix()
+            renderer.setSize(window.innerWidth*.8, window.innerHeight)
+            render()
+        }
+
+        const stats = Stats()
+        document.body.appendChild(stats.dom)
+
+        function animate() {
+            requestAnimationFrame(animate)
+
+            controls.update()
+
+            render()
+
+            stats.update()
+        }
+
+        function render() {
+            renderer.render(scene, camera)
+        }
+
+        animate()
+
+        document.getElementById("render-button").onclick = async function() {
+            scene.remove(mesh);
+            mesh = mesh = await generateMesh();
+            scene.add(mesh)
+        }
+
+        document.getElementById("download-button").onclick = function() {
+            downloadFile(new Blob([output], { type: "application/octet-stream" }), "OpenSCAD.stl");
+        }
     </script>
+    <div style="width: 100%;overflow:auto;display: flex; flex-flow: column; height: 100%;flex-direction: row;align-items: stretch;">
+        <div style="float:left; width: 80%" id="render">
+        </div>
+        <div style="float:right;flex-grow : 1;">
+            <a id="render-button" href="#">Render</a>
+            <a id="download-button" href="#">Download</a>
+            <textarea name="data" id="input" style="width: 95%; height:95%">cube(2);</textarea>
+        </div>
+    </div>
 </body>
 
 </html>

@@ -13,7 +13,12 @@ app.use(async (context, next) => {
     await context.send({ root: join(Deno.cwd(), "../libs/openscad") });
     return;
   }
-
+  if(context.request.url.pathname.startsWith("/three")){
+    context.request.url.pathname = context.request.url.pathname.substring("/three".length);
+    await context.send({ root: join(Deno.cwd(), "../node_modules/three") });
+    return;
+  }
+  
   try {
     await context.send({ root: join(Deno.cwd(), "www"), index: "index.html" });
   } catch {
