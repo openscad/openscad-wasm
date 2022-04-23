@@ -44,6 +44,7 @@
         var output;
 
         async function generateMesh() {
+            // Quick testing shows that this seems to be the way. Re-using instance errors when running "callMain"
             var instance = await OpenScad({ noInitialRun: true });
             instance.FS.writeFile("/input2.scad", document.getElementById("input").value);
             instance.callMain(["/input2.scad", "-o", "cube2.stl"]);
@@ -118,7 +119,7 @@
 
         document.getElementById("render-button").onclick = async function() {
             scene.remove(mesh);
-            mesh = mesh = await generateMesh();
+            mesh = await generateMesh();
             scene.add(mesh)
         }
 
