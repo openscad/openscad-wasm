@@ -1,6 +1,28 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <style>
+        .resize {
+            width: 2px;
+            padding: 0px;
+            border: 4px;
+            border-color: white;
+            border-style: solid;
+            background-color: cadetblue;
+            cursor: ew-resize;
+            flex: 0 0 auto;
+        }
+        #mainApp {
+            display: flex;
+            height: 100%;
+        }
+        #editor {
+            padding-right: 7px;
+        }
+        body {
+            overflow: hidden;
+        }
+    </style>
     <script type="importmap">
         {
             "imports": {
@@ -19,7 +41,6 @@
         import * as THREE from 'three'
         import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
         import { STLLoader } from 'three/examples/jsm/loaders/STLLoader'
-        import Stats from 'three/examples/jsm/libs/stats.module'
 
         function downloadFile(blob, fileName) {
             const link = document.createElement('a');
@@ -80,7 +101,8 @@
         renderer.outputEncoding = THREE.sRGBEncoding
         
         renderer.setSize(window.innerWidth*.8, window.innerHeight)
-        document.getElementById("render").appendChild(renderer.domElement)
+        document.getElementById("renderPane").appendChild(renderer.domElement)
+        
 
         const controls = new OrbitControls(camera, renderer.domElement)
         controls.enableDamping = true
@@ -92,14 +114,18 @@
 
         window.addEventListener('resize', onWindowResize, false)
         function onWindowResize() {
-            camera.aspect = window.innerWidth*.8 / window.innerHeight
+            // Get the width of the render view
+            var width = document.getElementById("renderPane").style.width;
+            // Cut off the 'px'
+            width = width.substring(0,width.length-2)
+
+            camera.aspect = width / window.innerHeight
             camera.updateProjectionMatrix()
-            renderer.setSize(window.innerWidth*.8, window.innerHeight)
+            renderer.setSize(width, window.innerHeight)
+            document.getElementById("mainApp").style.height = (window.innerHeight) + 'px'
             render()
         }
 
-        const stats = Stats()
-        document.body.appendChild(stats.dom)
 
         function animate() {
             requestAnimationFrame(animate)
@@ -107,8 +133,6 @@
             controls.update()
 
             render()
-
-            stats.update()
         }
 
         function render() {
@@ -126,15 +150,55 @@
         document.getElementById("download-button").onclick = function() {
             downloadFile(new Blob([output], { type: "application/octet-stream" }), "OpenSCAD.stl");
         }
+
+
+        var resizeBar = "";
+        function resizeMouseDown(target) {
+            console.log(event);
+            resizeBar = event.target;
+        }
+
+        document.querySelectorAll(".resize").forEach(function(e) {
+            console.log(e);
+            e.addEventListener('mousedown',resizeMouseDown, true);
+        })
+
+        document.addEventListener('mousemove', function(e) {
+            // Exit if no bar selected
+            if (resizeBar == "") {
+                return false;
+            }
+            var resizeTarget = document.getElementById(resizeBar.attributes.target.value);
+
+            // Resize right side item for now, we'll make it smarter later
+            var resizeWidth = window.innerWidth - e.clientX;
+
+            resizeTarget.style.width = (Math.min(window.innerWidth - 120, resizeWidth)) + 'px';
+
+            onWindowResize();
+        });
+
+        document.addEventListener('mouseup', function(e) {
+            resizeBar = "";
+        });
+
+        // Set default sizing
+        document.getElementById("renderPane").style.width = (window.innerWidth*.8) + 'px'
+        document.getElementById("mainApp").style.height = (window.innerHeight) + 'px'
+
+
     </script>
-    <div style="width: 100%;overflow:auto;display: flex; flex-flow: column; height: 100%;flex-direction: row;align-items: stretch;">
-        <div style="float:left; width: 80%" id="render">
-        </div>
-        <div style="float:right;flex-grow : 1;">
+    <div id="mainApp">
+        <div id="editor" style="background-color: bisque; flex: 1 1 auto">
+            <!-- This will eventually be a toolbar -->
             <a id="render-button" href="#">Render</a>
             <a id="download-button" href="#">Download</a>
-            <textarea name="data" id="input" style="width: 95%; height:95%">cube(2);</textarea>
+            <br>
+            
+            <textarea name="data" id="input" style="width: 100%; height:95%;">cube(2);</textarea>
         </div>
+        <div class="resize" id="resizeEditor" target="renderPane" direction="horazontal" onmousedown="resizeMouseDown('resizeEditor')"></div>
+        <div id="renderPane" style="background-color:aqua;flex: 0 1 auto"></div>
     </div>
 </body>
 
