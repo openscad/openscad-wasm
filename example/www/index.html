@@ -51,15 +51,22 @@
             link.remove();
         };
 
-        const material = new THREE.MeshPhysicalMaterial({
-            color: 0x004400,
-            metalness: 0.25,
-            roughness: 0.1,
-            opacity: 0,
-            transparent: false,
-            transmission: 0.8,
-            clearcoat: 1.0,
-            clearcoatRoughness: 0.25
+        // const material = new THREE.MeshPhysicalMaterial({
+        //     color: 0x004400,
+        //     metalness: 0.25,
+        //     roughness: 0.1,
+        //     opacity: 0,
+        //     transparent: false,
+        //     transmission: 0.8,
+        //     clearcoat: 1.0,
+        //     clearcoatRoughness: 0.25
+        // })
+
+        const material = new THREE.MeshStandardMaterial({
+            color: 0x009900,
+            flatShading: true,
+            metalness: 0.1,
+            roughness: 0.5,
         })
 
         var output;
@@ -82,11 +89,7 @@
         const scene = new THREE.Scene()
         scene.add(new THREE.AxesHelper(5))
 
-        const light = new THREE.SpotLight()
-        light.position.set(15, 15, 15)
-        scene.add(light)
-
-        const light2 = new THREE.AmbientLight()
+        const light2 = new THREE.AmbientLight(0xffffff, 0.5)
         scene.add(light2)
 
         const camera = new THREE.PerspectiveCamera(
@@ -96,6 +99,11 @@
             1000
         )
         camera.position.z = 3
+
+        const light = new THREE.PointLight(0xffffff, 1.5)
+        light.position.set(1, 1, 2)
+        camera.add(light)
+        scene.add(camera)
 
         const renderer = new THREE.WebGLRenderer()
         renderer.outputEncoding = THREE.sRGBEncoding
@@ -125,7 +133,6 @@
             document.getElementById("mainApp").style.height = (window.innerHeight) + 'px'
             render()
         }
-
 
         function animate() {
             requestAnimationFrame(animate)
