@@ -75,7 +75,7 @@ libs/eigen:
 	git clone https://github.com/PX4/eigen.git ${SHALLOW} ${SINGLE_BRANCH} $@
 
 libs/fontconfig:
-	git clone https://gitlab.freedesktop.org/fontconfig/fontconfig.git ${SHALLOW} ${SINGLE_BRANCH_MAIN} $@
+	git clone https://github.com/freedesktop/fontconfig.git ${SHALLOW} ${SINGLE_BRANCH_MAIN} $@
 	git -C $@ apply ../../patches/fontconfig.patch 
 
 libs/freetype:
