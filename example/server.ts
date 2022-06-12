@@ -6,15 +6,14 @@ const app = new Application();
 
 app.use(logger.logger);
 
-// Enable CORP headers for SharedArrayBuffer
-app.use(async (context, next) => {
-    context.response.headers.append("Cross-Origin-Opener-Policy", "same-origin");
-    context.response.headers.append("Cross-Origin-Embedder-Policy", "require-corp");
-    await next();
-})
-
 // Serve static files from example/www and build folders
 app.use(async (context, next) => {
+  if(context.request.url.pathname.startsWith("/src")){
+    context.request.url.pathname = context.request.url.pathname.substring("/src".length);
+    await context.send({ root: join(Deno.cwd(), "../libs/openscad") });
+    return;
+  }
+
   try {
     await context.send({ root: join(Deno.cwd(), "www"), index: "index.html" });
   } catch {

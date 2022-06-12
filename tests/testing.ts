@@ -1,6 +1,7 @@
 import { join, dirname } from "https://deno.land/std/path/mod.ts";
+import { OpenSCAD, FS } from "../build/openscad.js";
 
-export async function loadTestFiles(instance: any, directory: string) {
+export async function loadTestFiles(instance: OpenSCAD, directory: string) {
   const fileMap = new Map<string, string>();
 
   await readFiles(fileMap, directory, '.');
@@ -12,10 +13,10 @@ export async function loadTestFiles(instance: any, directory: string) {
   }
 }
 
-function ensureDirExists(fs: any, path: string){
+function ensureDirExists(fs: FS, path: string){
   try{
     fs.stat(path);
-  }catch(e){
+  }catch(e: unknown){
     ensureDirExists(fs, dirname(path));
     fs.mkdir(path);
   }

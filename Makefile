@@ -1,7 +1,7 @@
 DOCKER_TAG_BASE ?= openscad-base
 DOCKER_TAG_OPENSCAD ?= openscad
 
-all: build/openscad.js
+all: build
 
 clean:
 	rm -rf libs
@@ -20,21 +20,30 @@ DOCKER_FLAGS= --build-arg CMAKE_BUILD_TYPE=Debug --build-arg EMXX_FLAGS="-gsourc
 endif
 
 .PHONY: build
-build: build/openscad.js
+build: build/openscad.wasm.js build/openscad.fonts.js
 
-build/openscad.js: build/.image 
+build/openscad.fonts.js: runtime/node_modules runtime/**/* res
+	mkdir -p build
+	cd runtime; npm run build
+	cp runtime/dist/* build
+
+runtime/node_modules:
+	cd runtime; npm install
+
+build/openscad.wasm.js: .image.make
+	mkdir -p build
 	docker run --name tmpcpy openscad
-	docker cp tmpcpy:/build .
+	docker cp tmpcpy:/build/openscad.js build/openscad.wasm.js
+	docker cp tmpcpy:/build/openscad.wasm build/
+	docker cp tmpcpy:/build/openscad.wasm.map build/ || true
 	docker rm tmpcpy
 
-build/.image: build/.base-image Dockerfile
+.image.make: .base-image.make Dockerfile
 	docker build libs/openscad -f Dockerfile -t $(DOCKER_TAG_OPENSCAD) ${DOCKER_FLAGS}
-	mkdir -p build
 	touch $@
 
-build/.base-image: libs Dockerfile.base
+.base-image.make: libs Dockerfile.base
 	docker build libs -f Dockerfile.base -t $(DOCKER_TAG_BASE)
-	mkdir -p build
 	touch $@
 
 libs: libs/cgal \
@@ -101,7 +110,7 @@ libs/doubleconversion:
 	git clone https://github.com/google/double-conversion ${SHALLOW} ${SINGLE_BRANCH} $@
 
 libs/openscad:
-	git clone --recurse https://github.com/openscad/openscad.git ${SINGLE_BRANCH} $@
+	git clone --recurse https://github.com/ochafik/openscad.git --branch filtered-number --single-branch $@
 
 libs/boost:
 	git clone --recurse https://github.com/boostorg/boost.git ${SHALLOW} ${SINGLE_BRANCH} $@
@@ -116,3 +125,13 @@ libs/mpfr-4.1.0:
 	wget  https://www.mpfr.org/mpfr-current/mpfr-4.1.0.tar.xz
 	tar xf mpfr-4.1.0.tar.xz -C libs
 	rm mpfr-4.1.0.tar.xz
+
+res: \
+	res/liberation \
+	res/MCAD
+
+res/liberation:
+	git clone --recurse https://github.com/shantigilbert/liberation-fonts-ttf.git ${SHALLOW} ${SINGLE_BRANCH} $@
+
+res/MCAD:
+	git clone https://github.com/openscad/MCAD.git ${SHALLOW} ${SINGLE_BRANCH} $@
