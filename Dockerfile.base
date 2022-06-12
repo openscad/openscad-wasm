@@ -18,6 +18,7 @@ RUN cd ../build && make && make install
 
 
 FROM emscripten/emsdk as glib
+COPY --from=zlib /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
 COPY glib .
 RUN apt-get update \
   && apt-get install -qqy \
