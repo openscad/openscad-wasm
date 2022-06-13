@@ -79,7 +79,7 @@ libs/fontconfig:
 	git -C $@ apply ../../patches/fontconfig.patch 
 
 libs/freetype:
-	git clone https://gitlab.freedesktop.org/freetype/freetype.git ${SHALLOW} ${SINGLE_BRANCH} $@
+	git clone https://github.com/freetype/freetype.git ${SHALLOW} ${SINGLE_BRANCH} $@
 
 libs/glib:
 	git clone https://gist.github.com/acfa1c09522705efa5eb0541d2d00887.git ${SHALLOW} ${SINGLE_BRANCH} $@
@@ -98,7 +98,7 @@ libs/liblzma:
 	git clone https://github.com/kobolabs/liblzma.git ${SHALLOW} ${SINGLE_BRANCH} $@
 
 libs/libzip:
-	git clone https://github.com/nih-at/libzip.git ${SHALLOW} ${SINGLE_BRANCH} $@
+	git clone https://github.com/nih-at/libzip.git ${SHALLOW} ${SINGLE_BRANCH_MAIN} $@
 
 libs/zlib:
 	git clone https://github.com/madler/zlib.git ${SHALLOW} ${SINGLE_BRANCH} $@
