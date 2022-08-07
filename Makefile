@@ -82,7 +82,8 @@ libs/freetype:
 	git clone https://github.com/freetype/freetype.git ${SHALLOW} ${SINGLE_BRANCH} $@
 
 libs/glib:
-	git clone https://gist.github.com/acfa1c09522705efa5eb0541d2d00887.git ${SHALLOW} ${SINGLE_BRANCH} $@
+	git clone https://gist.github.com/acfa1c09522705efa5eb0541d2d00887.git ${SINGLE_BRANCH} $@
+	git -C $@ checkout ad1a3e7aeb8a56679cf092c0bedf4b4a2a602c37
 	git -C $@ apply ../../patches/glib.patch 
 
 libs/harfbuzz:
