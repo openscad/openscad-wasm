@@ -1,5 +1,7 @@
 export interface InitOptions {
   noInitialRun: boolean;
+  print?: (text: string) => void;
+  printErr?: (text: string) => void;
 }
 
 export interface OpenSCAD {

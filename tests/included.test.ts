@@ -1,4 +1,4 @@
-import { assertEquals } from "https://deno.land/std@0.125.0/testing/asserts.ts";
+import { assertEquals, assertStringIncludes, assertNotEquals } from "https://deno.land/std@0.125.0/testing/asserts.ts";
 import { join } from "https://deno.land/std/path/mod.ts";
 import { loadTestFiles } from "./testing.ts";
 
@@ -38,12 +38,36 @@ Deno.test("text", async () => {
   await runTest(instance, "./text");
 });
 
-async function runTest(instance: OpenSCAD, directory: string) {
+Deno.test("print stderr", async () => {
+  let stderr = "";
+
+  const instance = await OpenScad({ 
+    noInitialRun: true,
+    printErr: (text) => stderr += text + "\n",
+   });
+  await runTest(instance, "./cube");
+
+  assertStringIncludes(stderr, "Facets:");
+});
+
+Deno.test("print stdout", async () => {
+  let stdout = "";
+
+  const instance = await OpenScad({ 
+    noInitialRun: true,
+    print: (text) => stdout += text + "\n",
+   });
+  await runTest(instance, "./cube", "-");
+
+  assertNotEquals(stdout.length, 0);
+});
+
+async function runTest(instance: OpenSCAD, directory: string, outfile?: string) {
   const __dirname = new URL('.', import.meta.url).pathname;
 
   await loadTestFiles(instance, join(__dirname, directory));
   
-  const code = instance.callMain([`/test.scad`, "-o", "out.stl"]);
+  const code = instance.callMain([`/test.scad`, "--export-format", "stl", "-o", outfile ?? "out.stl"]);
   assertEquals(0, code);
 
   const output = instance.FS.readFile("out.stl", { encoding: "binary" });
