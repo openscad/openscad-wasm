@@ -88,7 +88,7 @@ RUN make && make install
 
 FROM emscripten/emsdk as mpfr
 COPY --from=gmp /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
-COPY mpfr-4.1.0 . 
+COPY mpfr-4.1.1 . 
 RUN emconfigure ./configure --host none --with-gmp=/emsdk/upstream/emscripten/cache/sysroot --prefix=/emsdk/upstream/emscripten/cache/sysroot
 RUN make && make install
 

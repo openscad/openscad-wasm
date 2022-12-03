@@ -59,7 +59,7 @@ libs: libs/cgal \
 	libs/openscad \
 	libs/boost \
 	libs/gmp-6.1.2 \
-	libs/mpfr-4.1.0 \
+	libs/mpfr-4.1.1 \
 	libs/zlib \
 	libs/libxml2 \
 	libs/doubleconversion
@@ -120,7 +120,7 @@ libs/gmp-6.1.2:
 	tar xf gmp-6.1.2.tar.lz -C libs
 	rm gmp-6.1.2.tar.lz
 
-libs/mpfr-4.1.0:
+libs/mpfr-4.1.1:
 	wget  https://www.mpfr.org/mpfr-current/mpfr-4.1.1.tar.xz
 	tar xf mpfr-4.1.1.tar.xz -C libs
 	rm mpfr-4.1.1.tar.xz
