@@ -121,9 +121,9 @@ libs/gmp-6.1.2:
 	rm gmp-6.1.2.tar.lz
 
 libs/mpfr-4.1.0:
-	wget  https://www.mpfr.org/mpfr-current/mpfr-4.1.0.tar.xz
-	tar xf mpfr-4.1.0.tar.xz -C libs
-	rm mpfr-4.1.0.tar.xz
+	wget  https://www.mpfr.org/mpfr-current/mpfr-4.1.1.tar.xz
+	tar xf mpfr-4.1.1.tar.xz -C libs
+	rm mpfr-4.1.1.tar.xz
 
 res: \
 	res/liberation \
