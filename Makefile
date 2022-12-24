@@ -69,7 +69,7 @@ SINGLE_BRANCH=--branch master --single-branch
 SHALLOW=--depth 1
 
 libs/cgal:
-	git clone https://github.com/CGAL/cgal.git ${SHALLOW} ${SINGLE_BRANCH} $@
+	git clone https://github.com/CGAL/cgal.git ${SHALLOW} --branch 5.4.x-branch --single-branch $@
 
 libs/eigen:
 	git clone https://github.com/PX4/eigen.git ${SHALLOW} ${SINGLE_BRANCH} $@
@@ -121,7 +121,7 @@ libs/gmp-6.1.2:
 	rm gmp-6.1.2.tar.lz
 
 libs/mpfr-4.1.0:
-	wget  https://www.mpfr.org/mpfr-current/mpfr-4.1.0.tar.xz
+	wget  https://www.mpfr.org/mpfr-4.1.0/mpfr-4.1.0.tar.xz
 	tar xf mpfr-4.1.0.tar.xz -C libs
 	rm mpfr-4.1.0.tar.xz
 
