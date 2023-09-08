@@ -5,10 +5,13 @@ A full port of OpenSCAD to WASM.
 This project cross compiles all of the project dependencies and created a headless OpenSCAD WASM module.
 
 ## Setup
+
 Make sure that you have the following installed:
+
 - Make
 - Docker
 - Deno
+- lzip (might be missing on some distros)
 
 To build the project:
 
