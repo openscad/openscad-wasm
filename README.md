@@ -61,29 +61,38 @@ make test
 The project is an ES6 module. Simply import the module:
 
 ```ts
+<html>
+<head>
+<script src="./openscad.js" type="module"></script>
+</head>
+<body>
+
+<script type="module">
+
 import OpenSCAD from "./openscad.js";
 // OPTIONAL: add fonts to the FS
 import { addFonts } from "./openscad.fonts.js";
-// OPTIONAL: add MCAD liibrary to the FS
+// OPTIONAL: add MCAD library to the FS
 import { addMCAD } from "./openscad.mcad.js";
 
-// Instantiate the application
-const instance = await OpenSCAD();
-
-// OPTIONAL: add fonts to the FS
-addFonts(instance);
-
-// OPTIONAL: add MCAD liibrary to the FS
-addMCAD(instance);
-
-// Write a file to the filesystem
+let filename = "cube.stl";
+const instance = await OpenSCAD({noInitialRun: true});
 instance.FS.writeFile("/input.scad", `cube(10);`);
+instance.callMain(["/input.scad", "--enable=manifold", "-o", filename]);
+const output = instance.FS.readFile("/"+filename);
 
-// Run OpenSCAD with the arguments "/input.scad -o cube.stl"
-instance.callMain(["/input.scad", "-o", "cube.stl"]);
+const link = document.createElement("a");
+link.href = URL.createObjectURL(
+new Blob([output], { type: "application/octet-stream" }), null);
+link.download = filename;
+document.body.append(link);
+link.click();
+link.remove();
 
-// Read the data from cube.stl
-const output = instance.FS.readFile("/cube.stl");
+</script>
+
+</body>
+</html>
 ```
 
 For more information on reading and writing files check out the [Emscripten File System API](https://emscripten.org/docs/api_reference/Filesystem-API.html).
