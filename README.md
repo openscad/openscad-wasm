@@ -62,25 +62,34 @@ The project is an ES6 module. Simply import the module:
 
 ```ts
 <html>
-<head>
-<script src="./openscad.js" type="module"></script>
-</head>
+<head></head>
 <body>
 
 <script type="module">
 
 import OpenSCAD from "./openscad.js";
+
 // OPTIONAL: add fonts to the FS
 import { addFonts } from "./openscad.fonts.js";
+
 // OPTIONAL: add MCAD library to the FS
 import { addMCAD } from "./openscad.mcad.js";
 
-let filename = "cube.stl";
+const filename = "cube.stl";
+
+// Instantiate the application
 const instance = await OpenSCAD({noInitialRun: true});
-instance.FS.writeFile("/input.scad", `cube(10);`);
-instance.callMain(["/input.scad", "--enable=manifold", "-o", filename]);
+
+// Write a file to the filesystem
+instance.FS.writeFile("/input.scad", `cube(10);`); // OpenSCAD script to generate a 10mm cube
+
+// Run like a command-line program with arguments
+instance.callMain(["/input.scad", "--enable=manifold", "-o", filename]); // manifold is faster at rendering
+
+// Read the output 3D-model into a JS byte-array
 const output = instance.FS.readFile("/"+filename);
 
+// Generate a link to output 3D-model and download the output STL file
 const link = document.createElement("a");
 link.href = URL.createObjectURL(
 new Blob([output], { type: "application/octet-stream" }), null);
