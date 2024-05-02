@@ -1,9 +1,46 @@
 <!DOCTYPE html>
 <html>
-
-<body>
+<head>
+    <style>
+        .resize {
+            width: 2px;
+            padding: 0px;
+            border: 4px;
+            border-color: white;
+            border-style: solid;
+            background-color: cadetblue;
+            cursor: ew-resize;
+            flex: 0 0 auto;
+        }
+        #mainApp {
+            display: flex;
+            height: 100%;
+        }
+        #editor {
+            padding-right: 7px;
+        }
+        body {
+            overflow: hidden;
+        }
+    </style>
+    <script type="importmap">
+        {
+            "imports": {
+                "openscad": "/openscad.js",
+                "three": "/three/build/three.module.js",
+                "three/examples/jsm/loaders/STLLoader": "/three/examples/jsm/loaders/STLLoader.js",
+                "three/examples/jsm/controls/OrbitControls": "/three/examples/jsm/controls/OrbitControls.js",
+                "three/examples/jsm/libs/stats.module": "/three/examples/jsm/libs/stats.module.js"
+            }
+        }
+    </script>
+</head>
+<body style="margin:0">
     <script type="module">
-        import OpenScad from "./openscad.js";
+        import OpenScad from "openscad";
+        import * as THREE from 'three'
+        import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
+        import { STLLoader } from 'three/examples/jsm/loaders/STLLoader'
 
         function downloadFile(blob, fileName) {
             const link = document.createElement('a');
@@ -14,14 +51,162 @@
             link.remove();
         };
 
-        const instance = await OpenScad({ noInitialRun: true });
+        // const material = new THREE.MeshPhysicalMaterial({
+        //     color: 0x004400,
+        //     metalness: 0.25,
+        //     roughness: 0.1,
+        //     opacity: 0,
+        //     transparent: false,
+        //     transmission: 0.8,
+        //     clearcoat: 1.0,
+        //     clearcoatRoughness: 0.25
+        // })
 
-        instance.FS.writeFile("/input.scad", `cube(10);`);
-        instance.callMain(["/input.scad", "-o", "cube.stl"]);
-        const output = instance.FS.readFile("/cube.stl");
+        const material = new THREE.MeshStandardMaterial({
+            color: 0x009900,
+            flatShading: true,
+            metalness: 0.1,
+            roughness: 0.5,
+        })
 
-        downloadFile(new Blob([output], { type: "application/octet-stream" }), "cube.stl");
+        var output;
+
+        async function generateMesh() {
+            // Quick testing shows that this seems to be the way. Re-using instance errors when running "callMain"
+            var instance = await OpenScad({ noInitialRun: true });
+            instance.FS.writeFile("/input2.scad", document.getElementById("input").value);
+            instance.callMain(["/input2.scad", "-o", "cube2.stl"]);
+            output = instance.FS.readFile("/cube2.stl");
+
+            var t = loader.parse(output.buffer);
+            var outMesh = new THREE.Mesh(t, material);
+
+            return outMesh;
+
+        }
+
+        // Three.js tutorial https://sbcode.net/threejs/loaders-stl/
+        const scene = new THREE.Scene()
+        scene.add(new THREE.AxesHelper(5))
+
+        const light2 = new THREE.AmbientLight(0xffffff, 0.5)
+        scene.add(light2)
+
+        const camera = new THREE.PerspectiveCamera(
+            75,
+            window.innerWidth*.8 / window.innerHeight,
+            0.1,
+            1000
+        )
+        camera.position.z = 3
+
+        const light = new THREE.PointLight(0xffffff, 1.5)
+        light.position.set(1, 1, 2)
+        camera.add(light)
+        scene.add(camera)
+
+        const renderer = new THREE.WebGLRenderer()
+        renderer.outputEncoding = THREE.sRGBEncoding
+        
+        renderer.setSize(window.innerWidth*.8, window.innerHeight)
+        document.getElementById("renderPane").appendChild(renderer.domElement)
+        
+
+        const controls = new OrbitControls(camera, renderer.domElement)
+        controls.enableDamping = true
+
+        const loader = new STLLoader()
+        var mesh = await generateMesh();
+
+        scene.add(mesh);
+
+        window.addEventListener('resize', onWindowResize, false)
+        function onWindowResize() {
+            // Get the width of the render view
+            var width = document.getElementById("renderPane").style.width;
+            // Cut off the 'px'
+            width = width.substring(0,width.length-2)
+
+            camera.aspect = width / window.innerHeight
+            camera.updateProjectionMatrix()
+            renderer.setSize(width, window.innerHeight)
+            document.getElementById("mainApp").style.height = (window.innerHeight) + 'px'
+            render()
+        }
+
+        function animate() {
+            requestAnimationFrame(animate)
+
+            controls.update()
+
+            render()
+        }
+
+        function render() {
+            renderer.render(scene, camera)
+        }
+
+        animate()
+
+        document.getElementById("render-button").onclick = async function() {
+            scene.remove(mesh);
+            mesh = await generateMesh();
+            scene.add(mesh)
+        }
+
+        document.getElementById("download-button").onclick = function() {
+            downloadFile(new Blob([output], { type: "application/octet-stream" }), "OpenSCAD.stl");
+        }
+
+
+        var resizeBar = "";
+        function resizeMouseDown(target) {
+            console.log(event);
+            resizeBar = event.target;
+        }
+
+        document.querySelectorAll(".resize").forEach(function(e) {
+            console.log(e);
+            e.addEventListener('mousedown',resizeMouseDown, true);
+        })
+
+        document.addEventListener('mousemove', function(e) {
+            // Exit if no bar selected
+            if (resizeBar == "") {
+                return false;
+            }
+            var resizeTarget = document.getElementById(resizeBar.attributes.target.value);
+
+            // Resize right side item for now, we'll make it smarter later
+            var resizeWidth = window.innerWidth - e.clientX;
+
+            resizeTarget.style.width = (Math.min(window.innerWidth - 120, resizeWidth)) + 'px';
+
+            onWindowResize();
+        });
+
+        document.addEventListener('mouseup', function(e) {
+            resizeBar = "";
+        });
+
+        // Set default sizing
+        document.getElementById("renderPane").style.width = (window.innerWidth*.8) + 'px'
+        document.getElementById("mainApp").style.height = (window.innerHeight) + 'px'
+
+
     </script>
+    <div id="mainApp">
+        <div id="editor" style="background-color: bisque; flex: 1 1 auto">
+            <!-- This will eventually be a toolbar -->
+            <a id="render-button" href="#">Render</a>
+            <a id="download-button" href="#">Download</a>
+            <br>
+            
+            <textarea name="data" id="input" style="width: 100%; height:95%;">cube(2);</textarea>
+        </div>
+        <div class="resize" id="resizeEditor" target="renderPane" direction="horazontal" onmousedown="resizeMouseDown('resizeEditor')"></div>
+        <div id="renderPane" style="background-color:aqua;flex: 0 1 auto"></div>
+    </div>
 </body>
 
 </html>
