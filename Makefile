@@ -7,7 +7,7 @@ endif
 DOCKER_TAG_BASE ?= openscad-base$(TAG_SUFFIX)
 DOCKER_TAG_OPENSCAD ?= openscad$(TAG_SUFFIX)
 
-# Use the arm64 version of the emscripten sdk if running on an arm64 machine, as QEMU would crash in a couple of spots.
+# Use the arm64 version of the emscripten sdk if running on an arm64 machine, as the amd64 image would crash QEMU in a couple of places.
 # See latest version in https://hub.docker.com/r/emscripten/emsdk/tags
 EMSCRIPTEN_VERSION ?= 3.1.74
 UNAME_MACHINE := $(shell uname -m)
@@ -41,7 +41,7 @@ build/openscad.fonts.js: runtime/node_modules runtime/**/* res
 runtime/node_modules:
 	cd runtime; npm install
 
-build/openscad.wasm.js: .image.make
+build/openscad.wasm.js: .image-$(ENV).make
 	mkdir -p build
 	docker run --name tmpcpy openscad
 	docker cp tmpcpy:/build/openscad.js build/openscad.wasm.js
@@ -49,11 +49,11 @@ build/openscad.wasm.js: .image.make
 	docker cp tmpcpy:/build/openscad.wasm.map build/ || true
 	docker rm tmpcpy
 
-.image.make: .base-image.make Dockerfile
+.image-$(ENV).make: .base-image-$(ENV).make Dockerfile
 	docker build libs/openscad -f Dockerfile -t $(DOCKER_TAG_OPENSCAD) --build-arg CMAKE_BUILD_TYPE=$(ENV) --build-arg DOCKER_TAG_BASE=$(DOCKER_TAG_BASE)
 	touch $@
 
-.base-image.make: libs Dockerfile.base
+.base-image-$(ENV).make: libs Dockerfile.base
 	docker build libs -f Dockerfile.base -t $(DOCKER_TAG_BASE) --build-arg CMAKE_BUILD_TYPE=$(ENV) --build-arg EMSCRIPTEN_SDK_TAG=$(EMSCRIPTEN_SDK_TAG)
 	touch $@
 
@@ -105,6 +105,7 @@ libs/fontconfig:
 
 libs/freetype:
 	git clone https://github.com/freetype/freetype.git ${SHALLOW} ${SINGLE_BRANCH} $@
+# git clone https://gitlab.freedesktop.org/freetype/freetype.git ${SHALLOW} ${SINGLE_BRANCH} $@
 
 libs/glib:
 	test -d $@ || git clone https://github.com/kleisauke/glib.git ${SHALLOW} --branch wasm-vips-2.83.2 --single-branch $@
