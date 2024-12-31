@@ -138,16 +138,23 @@ libs/openscad:
 	git clone --recurse https://github.com/openscad/openscad.git ${SHALLOW} ${SINGLE_BRANCH} $@
 
 libs/boost:
-	git clone --recurse https://github.com/boostorg/boost.git ${SHALLOW} ${SINGLE_BRANCH} $@
+	wget https://boostorg.jfrog.io/artifactory/main/release/1.87.0/source/boost_1_87_0.tar.bz2
+	tar xjf boost_1_87_0.tar.bz2 -C libs
+	mv libs/boost_1_87_0 libs/boost
+	rm boost_1_87_0.tar.bz2
 	sed -i -E 's/-fwasm-exceptions/-fexceptions/g' libs/boost/tools/build/src/tools/emscripten.jam
 
 libs/gmp:
-	wget -q https://gmplib.org/download/gmp/gmp-6.3.0.tar.lz -O - | lzip -d | tar x -C libs
+	wget https://gmplib.org/download/gmp/gmp-6.3.0.tar.lz 
+	tar --lzma -xf gmp-6.3.0.tar.lz -C libs
 	mv libs/gmp-6.3.0 $@
+	rm gmp-6.3.0.tar.lz
 
 libs/mpfr:
-	wget -q https://www.mpfr.org/mpfr-4.2.1/mpfr-4.2.1.tar.xz -O - | xz -d | tar x -C libs
+	wget https://www.mpfr.org/mpfr-4.2.1/mpfr-4.2.1.tar.xz
+	tar xJf mpfr-4.2.1.tar.xz -C libs
 	mv libs/mpfr-4.2.1 $@
+	rm mpfr-4.2.1.tar.xz
 
 res: \
 	res/noto \
