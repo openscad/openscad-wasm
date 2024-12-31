@@ -6,7 +6,10 @@ ARG EMSCRIPTEN_FLAGS="-fexceptions"
 
 FROM ${EMSCRIPTEN_SDK_TAG} AS builder
 ARG EMSCRIPTEN_FLAGS
-RUN apt update && \
+RUN --mount=type=cache,target=/var/cache/apt \
+    --mount=type=cache,target=/var/lib/apt \
+    --mount=type=cache,target=/root/.cache/pip \
+    apt update && \
     apt install -qqy \
       autoconf \
       automake \
@@ -32,8 +35,7 @@ RUN apt update && \
       wget && \
     pip3 install \
       meson \
-      packaging && \
-    apt-get clean
+      packaging
 ENV CFLAGS="${EMSCRIPTEN_FLAGS}"
 ENV CXXFLAGS="${EMSCRIPTEN_FLAGS}"
 ENV LDFLAGS="${EMSCRIPTEN_FLAGS}"
@@ -218,16 +220,16 @@ RUN emcmake cmake -B ../build -G Ninja -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} &&
 
 FROM builder AS openscad-base
 COPY --from=boost /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
-# COPY --from=cairo /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
-COPY --from=cgal /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
-COPY --from=doubleconversion /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
-COPY --from=eigen /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
-COPY --from=fontconfig /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
-COPY --from=freetype /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
-COPY --from=glib /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
 COPY --from=gmp /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
-COPY --from=harfbuzz /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
-# COPY --from=libexpat /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
-COPY --from=libffi /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
-COPY --from=libzip /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
 COPY --from=mpfr /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
+COPY --from=cgal /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
+COPY --from=eigen /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
+COPY --from=harfbuzz /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
+COPY --from=fontconfig /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
+COPY --from=glib /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
+COPY --from=libzip /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
+COPY --from=freetype /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
+COPY --from=libffi /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
+COPY --from=doubleconversion /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
+# COPY --from=cairo /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
+# COPY --from=libexpat /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
