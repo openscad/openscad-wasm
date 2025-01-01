@@ -1,7 +1,15 @@
 ENV=Release
-TAG_SUFFIX=
+TAG_SUFFIX =
+EMSCRIPTEN_FLAGS ?= -fexceptions
 ifeq ($(strip $(ENV)),Debug)
-TAG_SUFFIX=-debug
+CMAKE_BUILD_TYPE = Debug
+MESON_BUILD_TYPE = debug
+EMSCRIPTEN_FLAGS = $(EMSCRIPTEN_FLAGS) -g -O0
+TAG_SUFFIX = -debug
+else
+CMAKE_BUILD_TYPE = Release
+MESON_BUILD_TYPE = release
+EMSCRIPTEN_FLAGS = $(EMSCRIPTEN_FLAGS) -O3
 endif
 
 DOCKER_TAG_BASE ?= openscad-base$(TAG_SUFFIX)
@@ -50,11 +58,20 @@ build/openscad.wasm.js: .image-$(ENV).make
 	docker rm tmpcpy
 
 .image-$(ENV).make: .base-image-$(ENV).make Dockerfile
-	docker build libs/openscad -f Dockerfile -t $(DOCKER_TAG_OPENSCAD) --build-arg CMAKE_BUILD_TYPE=$(ENV) --build-arg DOCKER_TAG_BASE=$(DOCKER_TAG_BASE)
+	docker build libs/openscad \
+		-f Dockerfile \
+		-t $(DOCKER_TAG_OPENSCAD) \
+		--build-arg CMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE) \
+		--build-arg DOCKER_TAG_BASE=$(DOCKER_TAG_BASE)
 	touch $@
 
 .base-image-$(ENV).make: libs Dockerfile.base
-	docker build libs -f Dockerfile.base -t $(DOCKER_TAG_BASE) --build-arg CMAKE_BUILD_TYPE=$(ENV) --build-arg EMSCRIPTEN_SDK_TAG=$(EMSCRIPTEN_SDK_TAG)
+	docker build libs \
+		-f Dockerfile.base \
+		-t $(DOCKER_TAG_BASE) \
+		--build-arg CMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE) \
+		--build-arg MESON_BUILD_TYPE=$(MESON_BUILD_TYPE) \
+		--build-arg EMSCRIPTEN_SDK_TAG=$(EMSCRIPTEN_SDK_TAG)
 	touch $@
 
 libs: \

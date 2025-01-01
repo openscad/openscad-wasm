@@ -1,11 +1,11 @@
 ARG EMSCRIPTEN_SDK_TAG=emscripten/emsdk
-ARG CMAKE_BUILD_TYPE=Release
-ARG EMSCRIPTEN_FLAGS="-fexceptions"
-# -sUSE_PTHREADS=1 -lpthread -sWASM_WORKERS -sSHARED_MEMORY
 
 
 FROM ${EMSCRIPTEN_SDK_TAG} AS builder
-ARG EMSCRIPTEN_FLAGS
+ARG CMAKE_BUILD_TYPE=Release
+ARG MESON_BUILD_TYPE=release
+ARG EMSCRIPTEN_FLAGS="-fexceptions"
+# -sUSE_PTHREADS=1 -lpthread -sWASM_WORKERS -sSHARED_MEMORY
 RUN --mount=type=cache,target=/var/cache/apt \
     --mount=type=cache,target=/var/lib/apt \
     --mount=type=cache,target=/root/.cache/pip \
@@ -36,6 +36,8 @@ RUN --mount=type=cache,target=/var/cache/apt \
     pip3 install \
       meson \
       packaging
+ENV CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+ENV MESON_BUILD_TYPE=${MESON_BUILD_TYPE}
 ENV CFLAGS="${EMSCRIPTEN_FLAGS}"
 ENV CXXFLAGS="${EMSCRIPTEN_FLAGS}"
 ENV LDFLAGS="${EMSCRIPTEN_FLAGS}"
@@ -77,7 +79,8 @@ RUN cd expat && \
 
 FROM builder AS zlib
 COPY zlib .
-RUN emcmake cmake -B ../build -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} && \
+RUN emcmake cmake \
+        -B ../build && \
     cmake --build ../build && \
     cmake --install ../build
 
@@ -85,7 +88,9 @@ RUN emcmake cmake -B ../build -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} && \
 FROM builder AS libzip
 COPY --from=zlib /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
 COPY libzip .
-RUN emcmake cmake -B ../build -G Ninja -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} && \
+RUN emcmake cmake \
+        -B ../build \
+        -G Ninja && \
     cmake --build ../build --parallel && \
     cmake --install ../build
 
@@ -118,7 +123,7 @@ RUN meson \
       --prefix=/emsdk/upstream/emscripten/cache/sysroot \
       --cross-file=emscripten-crossfile.meson \
       --default-library=static \
-      --buildtype=release \
+      --buildtype=${MESON_BUILD_TYPE} \
       --force-fallback-for=pcre2,gvdb \
       -Dselinux=disabled \
       -Dxattr=false \
@@ -133,14 +138,21 @@ RUN meson \
 FROM builder AS freetype
 COPY --from=zlib /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
 COPY freetype .
-RUN emcmake cmake -B ../build -DFT_REQUIRE_ZLIB=TRUE -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} && \
+RUN emcmake cmake \
+        -B ../build \
+        -DFT_REQUIRE_ZLIB=TRUE && \
     cmake --build ../build && \
     cmake --install ../build
 
 
 FROM builder AS libxml2
 COPY libxml2 .
-RUN emcmake cmake -B ../build -G Ninja -DLIBXML2_WITH_PYTHON=OFF -DLIBXML2_WITH_LZMA=OFF -DLIBXML2_WITH_ZLIB=OFF -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} && \
+RUN emcmake cmake \
+        -B ../build \
+        -G Ninja \
+        -DLIBXML2_WITH_PYTHON=OFF \
+        -DLIBXML2_WITH_LZMA=OFF \
+        -DLIBXML2_WITH_ZLIB=OFF && \
     cmake --build ../build --parallel && \
     cmake --install ../build
 
@@ -150,7 +162,18 @@ COPY --from=zlib /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscri
 COPY --from=freetype /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
 COPY --from=libxml2 /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
 COPY fontconfig .
-RUN FREETYPE_CFLAGS="-I/emsdk/upstream/emscripten/cache/sysroot/include/freetype2" FREETYPE_LIBS="-lfreetype -lz" emconfigure ./autogen.sh --host none --disable-docs --disable-shared --enable-static --sysconfdir=/ --localstatedir=/ --with-default-fonts=/fonts --enable-libxml2 --prefix=/emsdk/upstream/emscripten/cache/sysroot && \
+ENV FREETYPE_CFLAGS="-I/emsdk/upstream/emscripten/cache/sysroot/include/freetype2"
+ENV FREETYPE_LIBS="-lfreetype -lz"
+RUN emconfigure ./autogen.sh \
+        --host none \
+        --disable-docs \
+        --disable-shared \
+        --enable-static \
+        --sysconfdir=/ \
+        --localstatedir=/ \
+        --with-default-fonts=/fonts \
+        --enable-libxml2 \
+        --prefix=/emsdk/upstream/emscripten/cache/sysroot && \
     emmake make && \
     emmake make install
 
@@ -168,7 +191,7 @@ RUN meson \
       --prefix=/emsdk/upstream/emscripten/cache/sysroot \
       --cross-file=emscripten-crossfile.meson \
       --default-library=static \
-      --buildtype=release \
+      --buildtype=${MESON_BUILD_TYPE} \
       -Dtests=disabled && \
     meson install -C ../build
   
@@ -176,14 +199,20 @@ RUN meson \
 FROM builder AS harfbuzz
 COPY --from=freetype /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
 COPY harfbuzz .
-RUN emcmake cmake -B ../build -G Ninja -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DHB_HAVE_FREETYPE=ON && \
+RUN emcmake cmake \
+        -B ../build \
+        -G Ninja \
+        -DHB_HAVE_FREETYPE=ON && \
     cmake --build ../build --parallel && \
     cmake --install ../build
 
 
 FROM builder AS eigen
 COPY eigen .
-RUN emcmake cmake -B ../build -G Ninja -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=/emsdk/upstream/emscripten/cache/sysroot && \
+RUN emcmake cmake \
+        -B ../build \
+        -G Ninja \
+        -DCMAKE_INSTALL_PREFIX=/emsdk/upstream/emscripten/cache/sysroot && \
     cmake --build ../build --parallel && \
     cmake --install ../build && \
     ln -s /emsdk/upstream/emscripten/cache/sysroot/include/eigen3/Eigen /emsdk/upstream/emscripten/cache/sysroot/include/Eigen
@@ -191,14 +220,20 @@ RUN emcmake cmake -B ../build -G Ninja -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -D
 
 FROM builder AS cgal
 COPY cgal .
-RUN emcmake cmake -B ../build -G Ninja -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-RUN cmake --build ../build --parallel && \
-cmake --install ../build
+RUN emcmake cmake \
+        -B ../build \
+        -G Ninja && \
+    cmake --build ../build --parallel && \
+    cmake --install ../build
 
 
 FROM builder AS gmp
 COPY gmp .
-RUN emconfigure ./configure --disable-assembly --host none --enable-cxx --prefix=/emsdk/upstream/emscripten/cache/sysroot HOST_CC=gcc && \
+RUN emconfigure ./configure \
+        --disable-assembly \
+        --host none \
+        --enable-cxx --prefix=/emsdk/upstream/emscripten/cache/sysroot \
+        HOST_CC=gcc && \
     make && \
     make install
 
@@ -206,14 +241,19 @@ RUN emconfigure ./configure --disable-assembly --host none --enable-cxx --prefix
 FROM builder AS mpfr
 COPY --from=gmp /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
 COPY mpfr .
-RUN emconfigure ./configure --host none --with-gmp=/emsdk/upstream/emscripten/cache/sysroot --prefix=/emsdk/upstream/emscripten/cache/sysroot && \
+RUN emconfigure ./configure \
+        --host none \
+        --with-gmp=/emsdk/upstream/emscripten/cache/sysroot \
+        --prefix=/emsdk/upstream/emscripten/cache/sysroot && \
     make && \
     make install
 
 
 FROM builder AS doubleconversion
 COPY doubleconversion .
-RUN emcmake cmake -B ../build -G Ninja -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} && \
+RUN emcmake cmake \
+        -B ../build \
+        -G Ninja && \
     cmake --build ../build --parallel && \
     cmake --install ../build
 
@@ -228,8 +268,9 @@ COPY --from=harfbuzz /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/em
 COPY --from=fontconfig /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
 COPY --from=glib /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
 COPY --from=libzip /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
-COPY --from=freetype /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
 COPY --from=libffi /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
 COPY --from=doubleconversion /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
+# COPY --from=freetype /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
 # COPY --from=cairo /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
 # COPY --from=libexpat /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
+# COPY --from=lib3mf /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot

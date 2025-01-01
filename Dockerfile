@@ -1,7 +1,5 @@
-ARG DOCKER_TAG_BASE=openscad-base
-
 FROM ${DOCKER_TAG_BASE}
-
+ARG DOCKER_TAG_BASE=openscad-base
 ARG CMAKE_BUILD_TYPE=Release
 
 COPY . . 
