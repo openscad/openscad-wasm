@@ -1,19 +1,24 @@
-ENV=Release
-TAG_SUFFIX =
+ENV=release
 EMSCRIPTEN_FLAGS ?= -fexceptions
-ifeq ($(strip $(ENV)),Debug)
+
+ifeq ($(strip $(ENV)),debug)
 CMAKE_BUILD_TYPE = Debug
 MESON_BUILD_TYPE = debug
 EMSCRIPTEN_FLAGS = $(EMSCRIPTEN_FLAGS) -g -O0
-TAG_SUFFIX = -debug
-else
+else ifeq ($(strip $(ENV)),release)
 CMAKE_BUILD_TYPE = Release
 MESON_BUILD_TYPE = release
-EMSCRIPTEN_FLAGS = $(EMSCRIPTEN_FLAGS) -O3
+EMSCRIPTEN_FLAGS = $(EMSCRIPTEN_FLAGS) -O3 -flto=thin
+else ifeq ($(strip $(ENV)),minsize)
+CMAKE_BUILD_TYPE = MinSizeRel
+MESON_BUILD_TYPE = minsize
+EMSCRIPTEN_FLAGS = $(EMSCRIPTEN_FLAGS) -Os -flto=thin
+else
+$(error Bad ENV, must be release or debug)
 endif
 
-DOCKER_TAG_BASE ?= openscad-base$(TAG_SUFFIX)
-DOCKER_TAG_OPENSCAD ?= openscad$(TAG_SUFFIX)
+DOCKER_TAG_BASE ?= openscad-base-$(ENV)
+DOCKER_TAG_OPENSCAD ?= openscad-$(ENV)
 
 # Use the arm64 version of the emscripten sdk if running on an arm64 machine, as the amd64 image would crash QEMU in a couple of places.
 # See latest version in https://hub.docker.com/r/emscripten/emsdk/tags
@@ -51,7 +56,7 @@ runtime/node_modules:
 
 build/openscad.wasm.js: .image-$(ENV).make
 	mkdir -p build
-	docker run --name tmpcpy openscad
+	docker run --name tmpcpy $(DOCKER_TAG_OPENSCAD)
 	docker cp tmpcpy:/build/openscad.js build/openscad.wasm.js
 	docker cp tmpcpy:/build/openscad.wasm build/
 	docker cp tmpcpy:/build/openscad.wasm.map build/ || true
