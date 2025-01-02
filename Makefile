@@ -206,10 +206,10 @@ libs/boost:
 	sed -i -E 's/-fwasm-exceptions/-fexceptions/g' libs/boost/tools/build/src/tools/emscripten.jam
 
 libs/gmp:
-	wget https://gmplib.org/download/gmp/gmp-6.3.0.tar.lz 
-	tar --lzma -xf gmp-6.3.0.tar.lz -C libs
+	wget https://gmplib.org/download/gmp/gmp-6.3.0.tar.xz
+	tar xf gmp-6.3.0.tar.xz -C libs
 	mv libs/gmp-6.3.0 $@
-	rm gmp-6.3.0.tar.lz
+	rm gmp-6.3.0.tar.xz
 
 libs/mpfr:
 	wget https://www.mpfr.org/mpfr-4.2.1/mpfr-4.2.1.tar.xz
