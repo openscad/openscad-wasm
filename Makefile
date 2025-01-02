@@ -1,24 +1,33 @@
-ENV=release
-EMSCRIPTEN_FLAGS ?= -fexceptions
+ENV ::= release
+PTHREAD ::= 0
+EMSCRIPTEN_FLAGS := -fexceptions
 
 ifeq ($(strip $(ENV)),debug)
-CMAKE_BUILD_TYPE = Debug
-MESON_BUILD_TYPE = debug
-EMSCRIPTEN_FLAGS = $(EMSCRIPTEN_FLAGS) -g -O0
+		CMAKE_BUILD_TYPE := Debug
+		MESON_BUILD_TYPE := debug
+		EMSCRIPTEN_FLAGS += -g -O0
 else ifeq ($(strip $(ENV)),release)
-CMAKE_BUILD_TYPE = Release
-MESON_BUILD_TYPE = release
-EMSCRIPTEN_FLAGS = $(EMSCRIPTEN_FLAGS) -O3 -flto=thin
+		CMAKE_BUILD_TYPE := Release
+		MESON_BUILD_TYPE := release
+		EMSCRIPTEN_FLAGS += -O3
 else ifeq ($(strip $(ENV)),minsize)
-CMAKE_BUILD_TYPE = MinSizeRel
-MESON_BUILD_TYPE = minsize
-EMSCRIPTEN_FLAGS = $(EMSCRIPTEN_FLAGS) -Os -flto=thin
+		CMAKE_BUILD_TYPE := MinSizeRel
+		MESON_BUILD_TYPE := minsize
+		EMSCRIPTEN_FLAGS += -Os
 else
-$(error Bad ENV, must be release or debug)
+		$(error Bad ENV, must be release, minsize or debug)
 endif
 
-DOCKER_TAG_BASE ?= openscad-base-$(ENV)
-DOCKER_TAG_OPENSCAD ?= openscad-$(ENV)
+ifeq ($(PTHREAD),1)
+    VARIANT = -pthread
+    EMSCRIPTEN_FLAGS += -pthread 
+# -sSHARED_MEMORY=1 -sPROXY_TO_PTHREAD=1 -sPTHREAD_POOL_SIZE=4
+else
+    VARIANT =
+endif
+
+DOCKER_TAG_BASE ?= openscad-base$(VARIANT)-$(ENV)
+DOCKER_TAG_OPENSCAD ?= openscad$(VARIANT)-$(ENV)
 
 # Use the arm64 version of the emscripten sdk if running on an arm64 machine, as the amd64 image would crash QEMU in a couple of places.
 # See latest version in https://hub.docker.com/r/emscripten/emsdk/tags
@@ -54,7 +63,7 @@ build/openscad.fonts.js: runtime/node_modules runtime/**/* res
 runtime/node_modules:
 	cd runtime; npm install
 
-build/openscad.wasm.js: .image-$(ENV).make
+build/openscad.wasm.js: .image$(VARIANT)-$(ENV).make
 	mkdir -p build
 	docker run --name tmpcpy $(DOCKER_TAG_OPENSCAD)
 	docker cp tmpcpy:/build/openscad.js build/openscad.wasm.js
@@ -62,21 +71,23 @@ build/openscad.wasm.js: .image-$(ENV).make
 	docker cp tmpcpy:/build/openscad.wasm.map build/ || true
 	docker rm tmpcpy
 
-.image-$(ENV).make: .base-image-$(ENV).make Dockerfile
+.image$(VARIANT)-$(ENV).make: .base-image$(VARIANT)-$(ENV).make Dockerfile
 	docker build libs/openscad \
 		-f Dockerfile \
 		-t $(DOCKER_TAG_OPENSCAD) \
-		--build-arg CMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE) \
-		--build-arg DOCKER_TAG_BASE=$(DOCKER_TAG_BASE)
+		--build-arg "CMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE)" \
+		--build-arg "DOCKER_TAG_BASE=$(DOCKER_TAG_BASE)" \
+		--build-arg "EMSCRIPTEN_FLAGS=$(EMSCRIPTEN_FLAGS)"
 	touch $@
 
-.base-image-$(ENV).make: libs Dockerfile.base
+.base-image$(VARIANT)-$(ENV).make: libs Dockerfile.base
 	docker build libs \
 		-f Dockerfile.base \
 		-t $(DOCKER_TAG_BASE) \
-		--build-arg CMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE) \
-		--build-arg MESON_BUILD_TYPE=$(MESON_BUILD_TYPE) \
-		--build-arg EMSCRIPTEN_SDK_TAG=$(EMSCRIPTEN_SDK_TAG)
+		--build-arg "CMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE)" \
+		--build-arg "MESON_BUILD_TYPE=$(MESON_BUILD_TYPE)" \
+		--build-arg "EMSCRIPTEN_FLAGS=$(EMSCRIPTEN_FLAGS)" \
+		--build-arg "EMSCRIPTEN_SDK_TAG=$(EMSCRIPTEN_SDK_TAG)"
 	touch $@
 
 libs: \
