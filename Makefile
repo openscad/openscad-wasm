@@ -175,7 +175,8 @@ libs/harfbuzz:
 	git clone https://github.com/harfbuzz/harfbuzz.git ${SHALLOW} ${SINGLE_BRANCH_MAIN} $@
 
 libs/lib3mf:
-	git clone --recurse https://github.com/3MFConsortium/lib3mf.git ${SHALLOW} ${SINGLE_BRANCH} $@
+	git clone --recurse https://github.com/3MFConsortium/lib3mf.git ${SHALLOW} --branch v2.3.2 $@
+	git -C $@ apply ../../patches/lib3mf.patch
 
 libs/libexpat:
 	git clone  https://github.com/libexpat/libexpat ${SHALLOW} ${SINGLE_BRANCH} $@
