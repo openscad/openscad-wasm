@@ -258,7 +258,7 @@ RUN emcmake cmake \
     cmake --install ../build
 
 
-FROM builder AS openscad-base
+FROM builder AS wasm-base
 COPY --from=boost /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
 COPY --from=gmp /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
 COPY --from=mpfr /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
