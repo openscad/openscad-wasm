@@ -11,7 +11,6 @@ Make sure that you have the following installed:
 - Make
 - Docker
 - Deno
-- lzip (might be missing on some distros)
 
 To build the project:
 

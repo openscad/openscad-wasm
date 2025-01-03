@@ -1,5 +1,6 @@
 ENV ::= release
 PTHREAD ::= 0
+BUILDKIT ::= 0
 EMSCRIPTEN_FLAGS := -fexceptions
 
 ifeq ($(strip $(ENV)),debug)
@@ -26,8 +27,9 @@ else
     VARIANT =
 endif
 
-DOCKER_TAG_BASE ?= openscad-base$(VARIANT)-$(ENV)
-DOCKER_TAG_OPENSCAD ?= openscad$(VARIANT)-$(ENV)
+DOCKER_TAG_BASE ?= openscad/wasm-base$(VARIANT)-$(ENV)
+DOCKER_TAG_OPENSCAD ?= openscad/wasm$(VARIANT)-$(ENV)
+DOCKER_OCI_BASE ?= .oci.wasm-base$(VARIANT)-$(ENV)
 
 # Use the arm64 version of the emscripten sdk if running on an arm64 machine, as the amd64 image would crash QEMU in a couple of places.
 # See latest version in https://hub.docker.com/r/emscripten/emsdk/tags
@@ -44,6 +46,8 @@ all: build
 clean:
 	rm -rf libs
 	rm -rf build
+	rm -rf .oci.*
+	rm -rf runtime/dist runtime/node_modules
 
 test:
 	cd tests; deno test --allow-read --allow-write
@@ -65,6 +69,7 @@ runtime/node_modules:
 
 build/openscad.wasm.js: .image$(VARIANT)-$(ENV).make
 	mkdir -p build
+	docker rm -f tmpcpy
 	docker run --name tmpcpy $(DOCKER_TAG_OPENSCAD)
 	docker cp tmpcpy:/build/openscad.js build/openscad.wasm.js
 	docker cp tmpcpy:/build/openscad.wasm build/
@@ -72,15 +77,28 @@ build/openscad.wasm.js: .image$(VARIANT)-$(ENV).make
 	docker rm tmpcpy
 
 .image$(VARIANT)-$(ENV).make: .base-image$(VARIANT)-$(ENV).make Dockerfile
+ifeq ($(BUILDKIT),0)
 	docker build libs/openscad \
 		-f Dockerfile \
 		-t $(DOCKER_TAG_OPENSCAD) \
 		--build-arg "CMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE)" \
 		--build-arg "DOCKER_TAG_BASE=$(DOCKER_TAG_BASE)" \
 		--build-arg "EMSCRIPTEN_FLAGS=$(EMSCRIPTEN_FLAGS)"
+else
+	docker buildx build libs/openscad \
+		-f Dockerfile \
+		-t $(DOCKER_TAG_OPENSCAD) \
+		--pull=false \
+		--load \
+		--build-context $(DOCKER_TAG_BASE)="oci-layout://$(PWD)/$(DOCKER_OCI_BASE)" \
+		--build-arg "CMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE)" \
+		--build-arg "DOCKER_TAG_BASE=$(DOCKER_TAG_BASE)" \
+		--build-arg "EMSCRIPTEN_FLAGS=$(EMSCRIPTEN_FLAGS)"
+endif
 	touch $@
 
 .base-image$(VARIANT)-$(ENV).make: libs Dockerfile.base
+ifeq ($(BUILDKIT),0)
 	docker build libs \
 		-f Dockerfile.base \
 		-t $(DOCKER_TAG_BASE) \
@@ -88,6 +106,16 @@ build/openscad.wasm.js: .image$(VARIANT)-$(ENV).make
 		--build-arg "MESON_BUILD_TYPE=$(MESON_BUILD_TYPE)" \
 		--build-arg "EMSCRIPTEN_FLAGS=$(EMSCRIPTEN_FLAGS)" \
 		--build-arg "EMSCRIPTEN_SDK_TAG=$(EMSCRIPTEN_SDK_TAG)"
+else
+	docker buildx build libs \
+		-f Dockerfile.base \
+		-t $(DOCKER_TAG_BASE) \
+		--build-arg "CMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE)" \
+		--build-arg "MESON_BUILD_TYPE=$(MESON_BUILD_TYPE)" \
+		--build-arg "EMSCRIPTEN_FLAGS=$(EMSCRIPTEN_FLAGS)" \
+		--build-arg "EMSCRIPTEN_SDK_TAG=$(EMSCRIPTEN_SDK_TAG)" \
+		--output=type=oci,tar=false,dest="$(DOCKER_OCI_BASE)"
+endif
 	touch $@
 
 libs: \
@@ -147,7 +175,8 @@ libs/harfbuzz:
 	git clone https://github.com/harfbuzz/harfbuzz.git ${SHALLOW} ${SINGLE_BRANCH_MAIN} $@
 
 libs/lib3mf:
-	git clone --recurse https://github.com/3MFConsortium/lib3mf.git ${SHALLOW} ${SINGLE_BRANCH} $@
+	git clone --recurse https://github.com/3MFConsortium/lib3mf.git ${SHALLOW} --branch v2.3.2 $@
+	git -C $@ apply ../../patches/lib3mf.patch
 
 libs/libexpat:
 	git clone  https://github.com/libexpat/libexpat ${SHALLOW} ${SINGLE_BRANCH} $@
@@ -178,10 +207,10 @@ libs/boost:
 	sed -i -E 's/-fwasm-exceptions/-fexceptions/g' libs/boost/tools/build/src/tools/emscripten.jam
 
 libs/gmp:
-	wget https://gmplib.org/download/gmp/gmp-6.3.0.tar.lz 
-	tar --lzma -xf gmp-6.3.0.tar.lz -C libs
+	wget https://gmplib.org/download/gmp/gmp-6.3.0.tar.xz
+	tar xf gmp-6.3.0.tar.xz -C libs
 	mv libs/gmp-6.3.0 $@
-	rm gmp-6.3.0.tar.lz
+	rm gmp-6.3.0.tar.xz
 
 libs/mpfr:
 	wget https://www.mpfr.org/mpfr-4.2.1/mpfr-4.2.1.tar.xz

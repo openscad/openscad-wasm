@@ -80,6 +80,7 @@ RUN cd expat && \
 FROM builder AS zlib
 COPY zlib .
 RUN emcmake cmake \
+        -DINSTALL_PKGCONFIG_DIR="/emsdk/upstream/emscripten/cache/sysroot/lib/pkgconfig/" \
         -B ../build && \
     cmake --build ../build && \
     cmake --install ../build
@@ -258,7 +259,21 @@ RUN emcmake cmake \
     cmake --install ../build
 
 
-FROM builder AS openscad-base
+FROM builder AS lib3mf
+COPY --from=zlib /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
+COPY --from=libzip /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
+COPY lib3mf .
+RUN emcmake cmake \
+        -B ../build \
+        -DLIB3MF_TESTS=OFF \
+        -DUSE_INCLUDED_ZLIB=OFF \
+        -DUSE_INCLUDED_LIBZIP=OFF \
+        -G Ninja && \
+    cmake --build ../build --parallel && \
+    cmake --install ../build
+
+
+FROM builder AS wasm-base
 COPY --from=boost /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
 COPY --from=gmp /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
 COPY --from=mpfr /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
@@ -270,7 +285,7 @@ COPY --from=glib /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscri
 COPY --from=libzip /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
 COPY --from=libffi /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
 COPY --from=doubleconversion /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
+COPY --from=lib3mf /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
 # COPY --from=freetype /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
 # COPY --from=cairo /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
 # COPY --from=libexpat /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
-# COPY --from=lib3mf /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
