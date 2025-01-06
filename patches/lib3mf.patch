@@ -1,0 +1,16 @@
+diff --git a/Include/API/lib3mf_model.hpp b/Include/API/lib3mf_model.hpp
+index d491ea08..d28594d4 100644
+--- a/Include/API/lib3mf_model.hpp
++++ b/Include/API/lib3mf_model.hpp
+@@ -195,9 +195,9 @@ public:
+ 
+ 	Lib3MF::sBox GetOutbox() override;
+ 
+-	IKeyStore * GetKeyStore();
++	IKeyStore * GetKeyStore() override;
+ 
+-	void SetRandomNumberCallback(const Lib3MF::RandomNumberCallback pTheCallback, const Lib3MF_pvoid pUserData);
++	void SetRandomNumberCallback(const Lib3MF::RandomNumberCallback pTheCallback, const Lib3MF_pvoid pUserData) override;
+ };
+ 
+ }
