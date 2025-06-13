@@ -11,7 +11,6 @@ RUN --mount=type=cache,target=/var/cache/apt \
     --mount=type=cache,target=/root/.cache/pip \
     apt update && \
     apt install -qqy \
-      autoconf \
       automake \
       autopoint \
       bison \
@@ -41,6 +40,16 @@ ENV MESON_BUILD_TYPE=${MESON_BUILD_TYPE}
 ENV CFLAGS="${EMSCRIPTEN_FLAGS}"
 ENV CXXFLAGS="${EMSCRIPTEN_FLAGS}"
 ENV LDFLAGS="${EMSCRIPTEN_FLAGS}"
+# Build autoconf from source since we require 2.72
+WORKDIR /home/ubuntu
+RUN wget https://ftp.gnu.org/gnu/autoconf/autoconf-2.72.tar.xz
+RUN tar -xf autoconf-2.72.tar.xz
+RUN ls -al autoconf-2.72/
+WORKDIR /home/ubuntu/autoconf-2.72/
+RUN ./configure
+RUN make
+RUN sudo make install
+WORKDIR /home/ubuntu
 
 
 FROM builder AS boost
@@ -94,7 +103,6 @@ RUN emcmake cmake \
         -G Ninja && \
     cmake --build ../build --parallel && \
     cmake --install ../build
-
 
 FROM builder AS libffi
 COPY libffi .

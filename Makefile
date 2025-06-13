@@ -33,7 +33,7 @@ DOCKER_OCI_BASE ?= .oci.wasm-base$(VARIANT)-$(ENV)
 
 # Use the arm64 version of the emscripten sdk if running on an arm64 machine, as the amd64 image would crash QEMU in a couple of places.
 # See latest version in https://hub.docker.com/r/emscripten/emsdk/tags
-EMSCRIPTEN_VERSION ?= 3.1.74
+EMSCRIPTEN_VERSION ?= 4.0.10
 UNAME_MACHINE := $(shell uname -m)
 ifeq ($(UNAME_MACHINE),arm64)
     EMSCRIPTEN_SDK_TAG=emscripten/emsdk:$(EMSCRIPTEN_VERSION)-arm64
@@ -71,9 +71,9 @@ build/openscad.wasm.js: .image$(VARIANT)-$(ENV).make
 	mkdir -p build
 	docker rm -f tmpcpy
 	docker run --name tmpcpy $(DOCKER_TAG_OPENSCAD)
-	docker cp tmpcpy:/build/openscad.js build/openscad.wasm.js
-	docker cp tmpcpy:/build/openscad.wasm build/
-	docker cp tmpcpy:/build/openscad.wasm.map build/ || true
+	docker cp tmpcpy:/home/build/openscad.js build/openscad.wasm.js
+	docker cp tmpcpy:/home/build/openscad.wasm build/
+	docker cp tmpcpy:/home/build/openscad.wasm.map build/ || true
 	docker rm tmpcpy
 
 .image$(VARIANT)-$(ENV).make: .base-image$(VARIANT)-$(ENV).make Dockerfile
