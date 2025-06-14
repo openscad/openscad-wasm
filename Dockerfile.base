@@ -1,45 +1,71 @@
 ARG EMSCRIPTEN_SDK_TAG=emscripten/emsdk
 
-
 FROM ${EMSCRIPTEN_SDK_TAG} AS builder
+
 ARG CMAKE_BUILD_TYPE=Release
 ARG MESON_BUILD_TYPE=release
 ARG EMSCRIPTEN_FLAGS="-fexceptions"
+
 # -sUSE_PTHREADS=1 -lpthread -sWASM_WORKERS -sSHARED_MEMORY
+
+# Install build tool and supporting files needed for building
+# dependencies and using puppeteer.
+# Puppeteer itself is not installed here, it can be added via
+#
+# npm init -y
+# npm i puppeteer
+# npx puppeteer browsers install chrome
+#
 RUN --mount=type=cache,target=/var/cache/apt \
     --mount=type=cache,target=/var/lib/apt \
-    --mount=type=cache,target=/root/.cache/pip \
-    apt update && \
-    apt install -qqy \
-      automake \
-      autopoint \
-      bison \
-      build-essential \
-      ccache \
-      cmake \
-      flex \
-      gettext \
-      git \
-      gperf \
-      gpg \
-      libtool \
-      ninja-build \
-      pkg-config \
-      prelink \
-      python-is-python3 \
-      python3 \
-      python3-pip \
-      texinfo \
-      unzip \
-      wget && \
+    apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        automake \
+        autopoint \
+        bison \
+        build-essential \
+        ninja-build \
+        ccache \
+        cmake \
+        flex \
+        gettext \
+        git \
+        gperf \
+        gpg \
+        libtool \
+        ninja-build \
+        pkg-config \
+        prelink \
+        python-is-python3 \
+        python3 \
+        python3-pip \
+        texinfo \
+        unzip \
+        wget \
+	libltdl-dev \
+        libatk1.0-0 \
+        libxkbcommon0 \
+        libpango-1.0-0 \
+        libatk-bridge2.0-0 \
+        libxcomposite1 \
+        libxdamage1 \
+        libxfixes3 \
+        libxrandr2 \
+        libcairo2 \
+        libdrm2 \
+        libgbm1
+
+RUN --mount=type=cache,target=/root/.cache/pip \
     pip3 install \
-      meson \
-      packaging
+        meson \
+        packaging
+
 ENV CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
 ENV MESON_BUILD_TYPE=${MESON_BUILD_TYPE}
 ENV CFLAGS="${EMSCRIPTEN_FLAGS}"
 ENV CXXFLAGS="${EMSCRIPTEN_FLAGS}"
 ENV LDFLAGS="${EMSCRIPTEN_FLAGS}"
+
 # Build autoconf from source since we require 2.72
 WORKDIR /home/ubuntu
 RUN wget https://ftp.gnu.org/gnu/autoconf/autoconf-2.72.tar.xz
