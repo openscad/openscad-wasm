@@ -32,6 +32,7 @@ RUN --mount=type=cache,target=/var/cache/apt \
         git \
         gperf \
         gpg \
+	gpg-agent \
         libtool \
         ninja-build \
         pkg-config \
