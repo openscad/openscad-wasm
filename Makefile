@@ -2,6 +2,7 @@ ENV ::= release
 PTHREAD ::= 0
 BUILDKIT ::= 0
 EMSCRIPTEN_FLAGS := -fexceptions
+DOCKER_EXTRA_ARGS :=
 
 ifeq ($(strip $(ENV)),debug)
 		CMAKE_BUILD_TYPE := Debug
@@ -76,30 +77,14 @@ build/openscad.wasm.js: .image$(VARIANT)-$(ENV).make
 	docker cp tmpcpy:/home/build/openscad.wasm.map build/ || true
 	docker rm tmpcpy
 
-.image$(VARIANT)-$(ENV).make: .base-image$(VARIANT)-$(ENV).make Dockerfile
-ifeq ($(BUILDKIT),0)
-	docker build libs/openscad \
-		-f Dockerfile \
-		-t $(DOCKER_TAG_OPENSCAD) \
-		--build-arg "CMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE)" \
-		--build-arg "DOCKER_TAG_BASE=$(DOCKER_TAG_BASE)" \
-		--build-arg "EMSCRIPTEN_FLAGS=$(EMSCRIPTEN_FLAGS)"
-else
-	docker buildx build libs/openscad \
-		-f Dockerfile \
-		-t $(DOCKER_TAG_OPENSCAD) \
-		--pull=false \
-		--load \
-		--build-context $(DOCKER_TAG_BASE)="oci-layout://$(PWD)/$(DOCKER_OCI_BASE)" \
-		--build-arg "CMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE)" \
-		--build-arg "DOCKER_TAG_BASE=$(DOCKER_TAG_BASE)" \
-		--build-arg "EMSCRIPTEN_FLAGS=$(EMSCRIPTEN_FLAGS)"
-endif
-	touch $@
-
+#
+# Base image with emscripten and all the library dependencies
+# for building OpenSCAD WASM.
+#
 .base-image$(VARIANT)-$(ENV).make: libs Dockerfile.base
 ifeq ($(BUILDKIT),0)
 	docker build libs \
+		$(DOCKER_EXTRA_ARGS) \
 		-f Dockerfile.base \
 		-t $(DOCKER_TAG_BASE) \
 		--build-arg "CMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE)" \
@@ -108,6 +93,8 @@ ifeq ($(BUILDKIT),0)
 		--build-arg "EMSCRIPTEN_SDK_TAG=$(EMSCRIPTEN_SDK_TAG)"
 else
 	docker buildx build libs \
+		$(DOCKER_EXTRA_ARGS) \
+		--progress plain \
 		-f Dockerfile.base \
 		-t $(DOCKER_TAG_BASE) \
 		--build-arg "CMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE)" \
@@ -115,6 +102,33 @@ else
 		--build-arg "EMSCRIPTEN_FLAGS=$(EMSCRIPTEN_FLAGS)" \
 		--build-arg "EMSCRIPTEN_SDK_TAG=$(EMSCRIPTEN_SDK_TAG)" \
 		--output=type=oci,tar=false,dest="$(DOCKER_OCI_BASE)"
+endif
+	touch $@
+
+#
+#  Using the base image for building the OpenSCAD WASM binary.
+#
+.image$(VARIANT)-$(ENV).make: .base-image$(VARIANT)-$(ENV).make Dockerfile
+ifeq ($(BUILDKIT),0)
+	docker build libs/openscad \
+		$(DOCKER_EXTRA_ARGS) \
+		-f Dockerfile \
+		-t $(DOCKER_TAG_OPENSCAD) \
+		--build-arg "CMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE)" \
+		--build-arg "DOCKER_TAG_BASE=$(DOCKER_TAG_BASE)" \
+		--build-arg "EMSCRIPTEN_FLAGS=$(EMSCRIPTEN_FLAGS)"
+else
+	docker buildx build libs/openscad \
+		$(DOCKER_EXTRA_ARGS) \
+		--progress plain \
+		-f Dockerfile \
+		-t $(DOCKER_TAG_OPENSCAD) \
+		--pull=false \
+		--load \
+		--build-context $(DOCKER_TAG_BASE)="oci-layout://$(PWD)/$(DOCKER_OCI_BASE)" \
+		--build-arg "CMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE)" \
+		--build-arg "DOCKER_TAG_BASE=$(DOCKER_TAG_BASE)" \
+		--build-arg "EMSCRIPTEN_FLAGS=$(EMSCRIPTEN_FLAGS)"
 endif
 	touch $@
 
