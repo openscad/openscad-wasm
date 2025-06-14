@@ -46,7 +46,7 @@ all: build
 clean:
 	rm -rf libs
 	rm -rf build
-	rm -rf .oci.*
+	rm -rf .oci.* .*.make
 	rm -rf runtime/dist runtime/node_modules
 
 test:
