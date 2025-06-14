@@ -31,6 +31,16 @@ make build
 make ENV=Debug build
 ```
 
+## MacOS
+
+On MacOS, the version of Make that ships with the OS (3.81) is not compatible with this makefile, so you'll need to install a modern version of make and use that instead.
+
+For instance, with homebrew:
+
+`brew install gmake`
+
+Depending on your PATH configuration, you may need to use `gmake` instead of `make` when running setup commands.
+
 ## Usage
 
 There is an example project in the example folder. Run it using:

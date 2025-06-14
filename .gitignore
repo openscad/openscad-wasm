@@ -8,3 +8,4 @@ res
 !res/fonts
 *.make
 .oci.*
+.DS_Store
