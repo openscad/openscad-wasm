@@ -1,0 +1,22 @@
+// Втулка кубика Рубика
+outer_diameter = 7;          // наружный диаметр втулки
+inner_diameter = 5;          // отверстие
+height_without_flange = 12;  // высота втулки без буртика
+flange_thickness = 1;        // толщина буртика
+flange_diameter = 9;         // диаметр буртика
+
+module bushing() {
+    difference() {
+        // тело втулки + буртик
+        union() {
+            cylinder(h=height_without_flange, d=outer_diameter);
+            translate([0,0,height_without_flange])
+                cylinder(h=flange_thickness, d=flange_diameter);
+        }
+        // отверстие
+        translate([0,0,-1])
+            cylinder(h=height_without_flange+flange_thickness+2, d=inner_diameter);
+    }
+}
+
+bushing();
