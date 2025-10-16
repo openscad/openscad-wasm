@@ -1,0 +1,20 @@
+// Protótipo de carcaça tipo pHmetro portátil
+$fn=64;
+wall = 2;
+length = 180;
+width = 40;
+height = 25;
+lcd_w = 30;
+lcd_h = 12;
+
+// Corpo principal oco
+difference() {
+    cube([length, width, height]);
+    translate([wall, wall, wall]) cube([length-2*wall, width-2*wall, height-wall]);
+    
+    // Janela LCD
+    translate([length/2 - lcd_w/2, width/2 - lcd_h/2, height-wall]) cube([lcd_w, lcd_h, wall+0.1]);
+    
+    // Espaço para pilhas
+    translate([length/2 - 55/2, 5, 5]) cube([55, 30, 15]);
+}
