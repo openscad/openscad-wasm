@@ -19,6 +19,7 @@ RUN emcmake cmake -B ../build . \
         -DBoost_USE_STATIC_LIBS=ON \
         -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} \
         -DCMAKE_BUILD_PARALLEL_LEVEL=${CMAKE_BUILD_PARALLEL_LEVEL} \
+        -DCMAKE_CXX_FLAGS="${CMAKE_CXX_FLAGS} -DCGAL_ALWAYS_ROUND_TO_NEAREST" \
         -DEXPERIMENTAL=ON \
         -DSNAPSHOT=ON \
         -G Ninja && \

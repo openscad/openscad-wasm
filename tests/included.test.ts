@@ -38,6 +38,21 @@ Deno.test("text", async () => {
   await runTest(instance, "./text");
 });
 
+Deno.test("hull cgal rounding (wasm regression)", async () => {
+  let stderr = "";
+  const instance = await OpenScad({
+    noInitialRun: true,
+    printErr: (text: string) => stderr += text + "\n",
+  });
+  await runTest(instance, "./hull-cgal-rounding");
+
+  // Without CGAL_ALWAYS_ROUND_TO_NEAREST, hull() of thin same-diameter
+  // cylinders triggers a CGAL convex_hull_3 assertion because WebAssembly
+  // does not support fesetround(FE_UPWARD).
+  assertEquals(stderr.includes("assertion violation"), false,
+    `CGAL assertion failure detected (missing CGAL_ALWAYS_ROUND_TO_NEAREST?):\n${stderr}`);
+});
+
 Deno.test("print stderr", async () => {
   let stderr = "";
 
