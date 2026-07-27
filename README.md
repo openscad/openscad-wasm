@@ -31,6 +31,18 @@ make build
 make ENV=Debug build
 ```
 
+## Windows Build
+
+For Windows users (or anyone preferring to skip `make`), you can build the project using the native Podman or Docker CLI and the provided PowerShell script. Make sure you have Podman Desktop or Docker Desktop, and Node/npm installed.
+
+Run the build script from PowerShell:
+
+```powershell
+.\build.ps1
+```
+
+This script will run a multi-stage process that fetches dependencies, builds the Emscripten toolchain, compiles the project, and extracts the WASM files to the `build/` directory using standard container commands (no `compose` required).
+
 ## MacOS
 
 On MacOS, the version of Make that ships with the OS (3.81) is not compatible with this makefile, so you'll need to install a modern version of make and use that instead.
@@ -65,24 +77,45 @@ deno test --allow-read --allow-write
 make test
 ```
 
+## Installation
+
+To use `openscad-wasm` in another local project, you can install it directly from your local filesystem using NPM.
+
+First, ensure you have built the project (`make build` or `.\build.ps1`). Then, in your other project, run:
+
+```bash
+npm install file:../path/to/openscad-wasm
+```
+
 ## API
 
-The project is an ES6 module. Simply import the module:
+The project is an ES6 module. Once installed, simply import the module into your application:
 
-```ts
+```javascript
+import OpenSCAD from "openscad-wasm";
+
+// OPTIONAL: add fonts to the FS
+import { addFonts } from "openscad-wasm/build/openscad.fonts.js";
+
+// OPTIONAL: add MCAD library to the FS
+import { addMCAD } from "openscad-wasm/build/openscad.mcad.js";
+
+const filename = "cube.stl";
+
+// Instantiate the application
+const instance = await OpenSCAD({noInitialRun: true});
+```
+
+### Example Usage in a Browser:
+
+```html
 <html>
 <head></head>
 <body>
 
 <script type="module">
 
-import OpenSCAD from "./openscad.js";
-
-// OPTIONAL: add fonts to the FS
-import { addFonts } from "./openscad.fonts.js";
-
-// OPTIONAL: add MCAD library to the FS
-import { addMCAD } from "./openscad.mcad.js";
+import OpenSCAD from "./build/openscad.js";
 
 const filename = "cube.stl";
 

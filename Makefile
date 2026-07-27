@@ -76,6 +76,7 @@ build/openscad.wasm.js: .image$(VARIANT)-$(ENV).make
 	docker cp tmpcpy:/home/build/openscad.wasm build/
 	docker cp tmpcpy:/home/build/openscad.wasm.map build/ || true
 	docker rm tmpcpy
+	cp package.json build/ 2>/dev/null || true
 
 #
 # Base image with emscripten and all the library dependencies
@@ -169,7 +170,7 @@ libs/libffi:
 	git clone https://github.com/libffi/libffi.git ${SHALLOW} ${SINGLE_BRANCH} $@
 
 libs/cgal:
-	git clone https://github.com/CGAL/cgal.git ${SHALLOW} --branch v6.0.1 --single-branch $@
+	git clone https://github.com/CGAL/cgal.git ${SHALLOW} --branch v6.1.1 --single-branch $@
 
 libs/eigen:
 	git clone https://gitlab.com/libeigen/eigen.git ${SHALLOW} ${SINGLE_BRANCH} $@

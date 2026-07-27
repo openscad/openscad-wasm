@@ -58,6 +58,7 @@ RUN --mount=type=cache,target=/var/cache/apt \
 
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip3 install \
+        cmake \
         meson \
         packaging
 
@@ -115,8 +116,11 @@ RUN cd expat && \
 
 FROM builder AS zlib
 COPY zlib .
-RUN emcmake cmake \
+RUN sed -i 's/option(ZLIB_BUILD_TESTING "Enable Zlib Examples as tests" ON)/option(ZLIB_BUILD_TESTING "Enable Zlib Examples as tests" OFF)/' CMakeLists.txt && \
+    sed -i 's/zlib SHARED/zlib STATIC/g' CMakeLists.txt && \
+    emcmake cmake \
         -DINSTALL_PKGCONFIG_DIR="/emsdk/upstream/emscripten/cache/sysroot/lib/pkgconfig/" \
+        -DZLIB_BUILD_TESTING=OFF \
         -B ../build && \
     cmake --build ../build && \
     cmake --install ../build
@@ -221,14 +225,17 @@ COPY --from=freetype /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/em
 COPY --from=libexpat /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emscripten/cache/sysroot
 COPY cairo .
 COPY emscripten-crossfile.meson .
-RUN meson \
+RUN sed -i "s/subdir('util')/#subdir('util')/g" meson.build && \
+    meson \
       setup \
       ../build \
       --prefix=/emsdk/upstream/emscripten/cache/sysroot \
       --cross-file=emscripten-crossfile.meson \
       --default-library=static \
       --buildtype=${MESON_BUILD_TYPE} \
-      -Dtests=disabled && \
+      -Dtests=disabled \
+      -Dpixman:tests=disabled \
+      -Dlibpng:tests=disabled && \
     meson install -C ../build
   
 
@@ -300,6 +307,7 @@ COPY --from=libzip /emsdk/upstream/emscripten/cache/sysroot /emsdk/upstream/emsc
 COPY lib3mf .
 RUN emcmake cmake \
         -B ../build \
+        -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
         -DLIB3MF_TESTS=OFF \
         -DUSE_INCLUDED_ZLIB=OFF \
         -DUSE_INCLUDED_LIBZIP=OFF \

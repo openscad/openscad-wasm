@@ -33,7 +33,13 @@ for (const set of sets) {
 }
 
 async function runTest(entrypoint: string, directory: string) {
-  const instance = await OpenScad({ noInitialRun: true });
+  const instance = await OpenScad({
+    noInitialRun: true,
+    locateFile: (path: string) => {
+      return new URL('../build/' + path, import.meta.url).href;
+    },
+    wasmBinary: Deno.readFileSync(new URL("../build/openscad.wasm", import.meta.url)),
+  });
   addFonts(instance);
 
   await loadTestFiles(instance, directory);

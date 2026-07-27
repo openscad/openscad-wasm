@@ -1,0 +1,31 @@
+{
+  "name": "openscad-wasm",
+  "version": "0.0.5",
+  "description": "A full port of OpenSCAD to WASM",
+  "main": "build/openscad.js",
+  "types": "build/openscad.d.ts",
+  "type": "module",
+  "scripts": {
+    "test": "cd tests && deno test --allow-read --allow-write"
+  },
+  "files": [
+    "build/openscad.js",
+    "build/openscad.wasm.js",
+    "build/openscad.wasm",
+    "build/openscad.d.ts",
+    "build/files.d.ts",
+    "build/openscad.fonts.js",
+    "build/openscad.fonts.d.ts",
+    "build/openscad.mcad.js",
+    "build/openscad.mcad.d.ts"
+  ],
+  "keywords": [
+    "openscad",
+    "wasm",
+    "webassembly",
+    "3d",
+    "cad"
+  ],
+  "author": "",
+  "license": "ISC"
+}

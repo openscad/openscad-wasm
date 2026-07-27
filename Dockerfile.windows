@@ -1,0 +1,176 @@
+ARG EMSCRIPTEN_SDK_TAG=emscripten/emsdk:4.0.10
+ARG CMAKE_BUILD_TYPE=Release
+ARG MESON_BUILD_TYPE=release
+ARG EMSCRIPTEN_FLAGS="-fexceptions -O3"
+
+# Stage 1: Download libraries and resources in a temporary layer
+FROM debian:bullseye-slim AS prepare
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    git \
+    wget \
+    tar \
+    make \
+    ca-certificates \
+    xz-utils \
+    dos2unix
+
+WORKDIR /workspace
+# Copy the entire workspace into the container so local code modifications are preserved
+COPY . /workspace/
+# Normalize line endings on patches to prevent git apply failures when built from Windows hosts
+RUN find ./patches -type f -exec dos2unix {} +
+# Make libs directly into /workspace/libs
+RUN make libs && make res
+
+# Stage 2: Build the base image sequentially
+# By doing this in one stage, we avoid the Podman/Docker "COPY --from" overlayfs
+# deadlock that occurs when copying thousands of tiny C++ header files across 20 stages.
+FROM ${EMSCRIPTEN_SDK_TAG} AS wasm-base
+
+ARG CMAKE_BUILD_TYPE
+ARG MESON_BUILD_TYPE
+ARG EMSCRIPTEN_FLAGS
+
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        automake autopoint bison build-essential ninja-build ccache cmake flex \
+        gettext git gperf gpg gpg-agent libtool pkg-config prelink python-is-python3 \
+        python3 python3-pip texinfo unzip wget libltdl-dev libatk1.0-0 libxkbcommon0 \
+        libpango-1.0-0 libatk-bridge2.0-0 libxcomposite1 libxdamage1 libxfixes3 \
+        libxrandr2 libcairo2 libdrm2 libgbm1
+
+RUN pip3 install cmake meson packaging
+
+ENV CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+ENV MESON_BUILD_TYPE=${MESON_BUILD_TYPE}
+ENV CFLAGS="${EMSCRIPTEN_FLAGS}"
+ENV CXXFLAGS="${EMSCRIPTEN_FLAGS}"
+ENV LDFLAGS="${EMSCRIPTEN_FLAGS}"
+
+# Build autoconf
+WORKDIR /home/ubuntu
+RUN wget https://ftp.gnu.org/gnu/autoconf/autoconf-2.72.tar.xz && \
+    tar -xf autoconf-2.72.tar.xz && \
+    cd autoconf-2.72 && \
+    ./configure && make && sudo make install
+
+# Copy all prepared libraries at once to avoid multi-stage COPY deadlocks
+COPY --from=prepare /workspace/libs /workspace/libs
+COPY --from=prepare /workspace/emscripten-crossfile.meson /workspace/emscripten-crossfile.meson
+WORKDIR /workspace
+
+# 1. zlib
+RUN cd libs/zlib && \
+    sed -i 's/option(ZLIB_BUILD_TESTING "Enable Zlib Examples as tests" ON)/option(ZLIB_BUILD_TESTING "Enable Zlib Examples as tests" OFF)/' CMakeLists.txt && \
+    sed -i 's/zlib SHARED/zlib STATIC/g' CMakeLists.txt && \
+    emcmake cmake -DINSTALL_PKGCONFIG_DIR="/emsdk/upstream/emscripten/cache/sysroot/lib/pkgconfig/" -DZLIB_BUILD_TESTING=OFF -B ../build_zlib && \
+    cmake --build ../build_zlib && cmake --install ../build_zlib
+
+# 2. libzip
+RUN cd libs/libzip && \
+    emcmake cmake -B ../build_libzip -G Ninja && \
+    cmake --build ../build_libzip --parallel && cmake --install ../build_libzip
+
+# 3. libffi
+RUN cd libs/libffi && ./autogen.sh && \
+    emconfigure ./configure --host wasm32-unknown-linux --prefix=/emsdk/upstream/emscripten/cache/sysroot --enable-static --disable-shared --disable-dependency-tracking --disable-builddir --disable-multi-os-directory --disable-raw-api --disable-docs && \
+    emmake make && emmake make install SUBDIRS='include'
+
+# 4. glib
+RUN cd libs/glib && cp /workspace/emscripten-crossfile.meson . && \
+    meson setup ../build_glib --prefix=/emsdk/upstream/emscripten/cache/sysroot --cross-file=emscripten-crossfile.meson --default-library=static --buildtype=${MESON_BUILD_TYPE} --force-fallback-for=pcre2,gvdb -Dselinux=disabled -Dxattr=false -Dlibmount=disabled -Dnls=disabled -Dtests=false -Dglib_assert=false -Dglib_checks=false && \
+    meson install -C ../build_glib
+
+# 5. freetype
+RUN cd libs/freetype && \
+    emcmake cmake -B ../build_freetype -DFT_REQUIRE_ZLIB=TRUE && \
+    cmake --build ../build_freetype && cmake --install ../build_freetype
+
+# 6. libxml2
+RUN cd libs/libxml2 && \
+    emcmake cmake -B ../build_libxml2 -G Ninja -DLIBXML2_WITH_PYTHON=OFF -DLIBXML2_WITH_LZMA=OFF -DLIBXML2_WITH_ZLIB=OFF && \
+    cmake --build ../build_libxml2 --parallel && cmake --install ../build_libxml2
+
+# 7. fontconfig
+ENV FREETYPE_CFLAGS="-I/emsdk/upstream/emscripten/cache/sysroot/include/freetype2"
+ENV FREETYPE_LIBS="-lfreetype -lz"
+RUN cd libs/fontconfig && \
+    emconfigure ./autogen.sh --host none --disable-docs --disable-shared --enable-static --sysconfdir=/ --localstatedir=/ --with-default-fonts=/fonts --enable-libxml2 --prefix=/emsdk/upstream/emscripten/cache/sysroot && \
+    emmake make && emmake make install
+
+# 8. libexpat
+RUN cd libs/libexpat/expat && ./buildconf.sh && \
+    emconfigure ./configure --without-docbook --host wasm32-unknown-linux --prefix=/emsdk/upstream/emscripten/cache/sysroot --enable-shared=no --disable-dependency-tracking && \
+    emmake make && emmake make install
+
+# 9. cairo
+RUN cd libs/cairo && cp /workspace/emscripten-crossfile.meson . && \
+    sed -i "s/subdir('util')/#subdir('util')/g" meson.build && \
+    meson setup ../build_cairo --prefix=/emsdk/upstream/emscripten/cache/sysroot --cross-file=emscripten-crossfile.meson --default-library=static --buildtype=${MESON_BUILD_TYPE} -Dtests=disabled -Dpixman:tests=disabled -Dlibpng:tests=disabled && \
+    meson install -C ../build_cairo
+
+# 10. harfbuzz
+RUN cd libs/harfbuzz && \
+    emcmake cmake -B ../build_harfbuzz -G Ninja -DHB_HAVE_FREETYPE=ON && \
+    cmake --build ../build_harfbuzz --parallel && cmake --install ../build_harfbuzz
+
+# 11. eigen
+RUN cd libs/eigen && \
+    emcmake cmake -B ../build_eigen -G Ninja -DCMAKE_INSTALL_PREFIX=/emsdk/upstream/emscripten/cache/sysroot && \
+    cmake --build ../build_eigen --parallel && cmake --install ../build_eigen && \
+    ln -s /emsdk/upstream/emscripten/cache/sysroot/include/eigen3/Eigen /emsdk/upstream/emscripten/cache/sysroot/include/Eigen
+
+# 12. cgal
+RUN cd libs/cgal && \
+    emcmake cmake -B ../build_cgal -G Ninja && \
+    cmake --build ../build_cgal --parallel && cmake --install ../build_cgal
+
+# 13. gmp
+RUN cd libs/gmp && \
+    emconfigure ./configure --disable-assembly --host none --enable-cxx --prefix=/emsdk/upstream/emscripten/cache/sysroot HOST_CC=gcc && \
+    make && make install
+
+# 14. mpfr
+RUN cd libs/mpfr && \
+    emconfigure ./configure --host none --with-gmp=/emsdk/upstream/emscripten/cache/sysroot --prefix=/emsdk/upstream/emscripten/cache/sysroot && \
+    make && make install
+
+# 15. boost
+RUN cd libs/boost && ./bootstrap.sh && \
+    ./b2 --disable-icu --prefix=/emsdk/upstream/emscripten/cache/sysroot --with-filesystem --with-program_options --with-regex --with-system address-model=32 cxxflags="-std=c++17 -stdlib=libc++ -fexceptions" install link=static linkflags="-stdlib=libc++ -fexceptions" release runtime-link=static toolset=emscripten
+
+# 16. doubleconversion
+RUN cd libs/doubleconversion && \
+    emcmake cmake -B ../build_doubleconversion -G Ninja && \
+    cmake --build ../build_doubleconversion --parallel && cmake --install ../build_doubleconversion
+
+# 17. lib3mf
+RUN cd libs/lib3mf && \
+    emcmake cmake -B ../build_lib3mf -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DLIB3MF_TESTS=OFF -DUSE_INCLUDED_ZLIB=OFF -DUSE_INCLUDED_LIBZIP=OFF -G Ninja && \
+    cmake --build ../build_lib3mf --parallel && cmake --install ../build_lib3mf
+
+# Stage 3: Build OpenSCAD WASM itself
+FROM wasm-base AS final
+COPY --from=prepare /workspace/libs/openscad /home/build/openscad
+WORKDIR /home/build/openscad
+RUN emcmake cmake -B ../build . \
+        -DBoost_USE_STATIC_RUNTIME=ON \
+        -DBoost_USE_STATIC_LIBS=ON \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_BUILD_PARALLEL_LEVEL=4 \
+        -DEXPERIMENTAL=ON \
+        -DSNAPSHOT=ON \
+        -G Ninja && \
+    cmake --build ../build --parallel
+
+# Build the JS/TS frontend wrappers (openscad.js and openscad.fonts.js)
+WORKDIR /workspace/runtime
+# Copy runtime sources and resources from the prepare stage
+COPY --from=prepare /workspace/runtime /workspace/runtime
+COPY --from=prepare /workspace/res /workspace/res
+# Use Emscripten's bundled Node and npm
+ENV PATH="/emsdk/node/14.18.2_64bit/bin:/emsdk/node/16.20.0_64bit/bin:/emsdk/node/22.16.0_64bit/bin:${PATH}"
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y npm && \
+    npm install && \
+    chmod -R +x ./node_modules/.bin/ && \
+    npm run build
